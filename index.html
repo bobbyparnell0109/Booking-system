@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BB Details — Mobile Car Valeting</title>
+<meta name="description" content="BB Details — professional mobile car valeting. We come to you. Exterior wash, interior clean and full valet." />
+
+<!-- ===================================================================
+     BB DETAILS — single-file car valeting website (LIVE / shared version)
+     -------------------------------------------------------------------
+     Everything (HTML + CSS + JS) lives in this one file. It is hosted on
+     GitHub Pages and saves bookings to a shared online database (Supabase),
+     so you can see every booking from any device — phone or laptop.
+
+     HOW BOOKINGS WORK NOW
+     ---------------------
+     - A customer fills in the form -> it's sent to a small secure server
+       function (Supabase Edge Function "bb-bookings") which stores it in
+       the database.
+     - The admin page asks for your password, sends it to that same server
+       function, and only then gets the bookings back. Customer details are
+       NEVER readable by the public — the database is locked down and only
+       the password unlocks it (the password lives on the server, not in
+       this file).
+
+     THINGS YOU'LL LIKELY WANT TO EDIT (search for the word EDIT):
+       1. CONFIG block (just below) — services, prices, phone, Facebook.
+       2. Colour theme — the :root CSS variables.
+       3. Admin password — this is NOT here anymore; it's on the server.
+          Ask to change it and it'll be updated in the bb-bookings function.
+     =================================================================== -->
+
+<script>
+/* =====================================================================
+   EDIT #1 — BUSINESS CONFIG
+   ---------------------------------------------------------------------
+   Change prices, services, contact details here.
+   To add a service: copy a line in `services` and give it a name + price.
+   ===================================================================== */
+const CONFIG = {
+  businessName: "BB Details",
+  tagline: "Showroom-fresh, without leaving your driveway. Mobile valeting that comes to you.",
+
+  // Services shown on the page AND in the booking dropdown.
+  services: [
+    { id: "exterior", label: "Exterior Wash", price: 25, blurb: "Snow foam, hand wash, wheels, tyres dressed and a streak-free finish." },
+    { id: "interior", label: "Interior Only",  price: 25, blurb: "Full vacuum, dashboard, door cards, glass and surfaces wiped down." },
+    { id: "full",     label: "Full Valet",     price: 40, blurb: "The lot — inside and out. Our most popular booking." }
+  ],
+
+  // Contact + social (placeholders — swap for your real details).
+  phone: "07XXX XXXXXX",                       // EDIT: your phone number
+  facebookUrl: "https://www.facebook.com/",    // EDIT: your Facebook page
+
+  // The online backend this site talks to (your Supabase project).
+  // You normally never need to touch this.
+  apiUrl: "https://qqkxxywdlqqkipioycaq.supabase.co/functions/v1/bb-bookings"
+};
+</script>
+
+<style>
+/* =====================================================================
+   EDIT #2 — COLOUR THEME (dark: blacks & greys)
+   ===================================================================== */
+:root {
+  --bg:        #0c0c0d;
+  --surface:   #161618;
+  --surface-2: #202024;
+  --border:    #2c2c31;
+  --text:      #f2f2f3;
+  --muted:     #9a9aa2;
+  --accent:    #e8e8ea;
+  --accent-ink:#0c0c0d;
+  --ok:        #3ecf8e;
+  --danger:    #ff6b6b;
+  --radius:    14px;
+  --maxw:      560px;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.55; -webkit-font-smoothing: antialiased;
+}
+.wrap { width: 100%; max-width: var(--maxw); margin: 0 auto; padding: 0 20px; }
+a { color: var(--text); }
+img { max-width: 100%; display: block; }
+
+header.site {
+  position: sticky; top: 0; z-index: 20;
+  background: rgba(12,12,13,0.85); backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+}
+.nav { display: flex; align-items: center; justify-content: space-between; height: 60px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: 0.2px; }
+.logo {
+  width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center;
+  background: linear-gradient(145deg, #2a2a2e, #131315); border: 1px solid var(--border);
+  font-weight: 800; font-size: 15px; color: var(--text);
+}
+.nav a.cta {
+  background: var(--accent); color: var(--accent-ink); text-decoration: none;
+  font-weight: 600; font-size: 14px; padding: 9px 16px; border-radius: 999px;
+}
+
+.hero { padding: 48px 0 36px; text-align: center; }
+.hero h1 { font-size: 38px; line-height: 1.05; margin: 0 0 14px; letter-spacing: -0.5px; }
+.hero .tag { color: var(--muted); font-size: 17px; margin: 0 auto 26px; max-width: 440px; }
+.hero .btn-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+.btn {
+  display: inline-block; cursor: pointer; border: none; font-size: 15px; font-weight: 600;
+  padding: 13px 22px; border-radius: 999px; text-decoration: none; transition: transform .08s ease, opacity .2s ease;
+}
+.btn:active { transform: translateY(1px); }
+.btn[disabled] { opacity: .55; cursor: default; }
+.btn-primary { background: var(--accent); color: var(--accent-ink); }
+.btn-ghost { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
+
+.gallery { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 34px; }
+.photo {
+  position: relative; aspect-ratio: 4 / 3; border-radius: var(--radius); border: 1px solid var(--border);
+  background: repeating-linear-gradient(45deg, #161618 0 12px, #1b1b1f 12px 24px);
+  display: grid; place-items: center; color: var(--muted); font-size: 13px; text-align: center; padding: 10px;
+}
+.photo .badge {
+  position: absolute; top: 10px; left: 10px; background: var(--bg); border: 1px solid var(--border);
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1px; padding: 4px 10px; border-radius: 999px; color: var(--text);
+}
+
+section { padding: 40px 0; border-top: 1px solid var(--border); }
+section h2 { font-size: 24px; margin: 0 0 6px; letter-spacing: -0.3px; }
+section .sub { color: var(--muted); margin: 0 0 22px; }
+
+.service {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 18px; margin-bottom: 12px;
+}
+.service .info h3 { margin: 0 0 4px; font-size: 17px; }
+.service .info p { margin: 0; color: var(--muted); font-size: 14px; }
+.service .price { font-size: 22px; font-weight: 800; white-space: nowrap; }
+
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; }
+.field { margin-bottom: 16px; }
+.field label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
+.field .req { color: var(--danger); }
+.field input, .field select, .field textarea {
+  width: 100%; background: var(--surface-2); color: var(--text); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px 13px; font-size: 16px; font-family: inherit;
+}
+.field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--accent); }
+.field textarea { resize: vertical; min-height: 80px; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.btn-full { width: 100%; text-align: center; }
+.form-error { color: var(--danger); font-size: 14px; margin: 12px 0 0; }
+
+.confirm {
+  background: rgba(62,207,142,0.08); border: 1px solid rgba(62,207,142,0.4); color: var(--text);
+  border-radius: var(--radius); padding: 20px; text-align: center;
+}
+.confirm .tick {
+  width: 46px; height: 46px; border-radius: 50%; margin: 0 auto 12px; background: var(--ok);
+  color: #04130b; display: grid; place-items: center; font-size: 24px; font-weight: 800;
+}
+.hidden { display: none !important; }
+
+footer.site { border-top: 1px solid var(--border); padding: 32px 0 40px; text-align: center; color: var(--muted); font-size: 14px; }
+footer.site a { color: var(--text); text-decoration: none; font-weight: 600; }
+footer.site .links { display: flex; gap: 22px; justify-content: center; margin-bottom: 14px; flex-wrap: wrap; }
+footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration: underline; }
+
+.booking { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
+.booking.done { opacity: 0.6; }
+.booking .top { display: flex; justify-content: space-between; align-items: start; gap: 10px; }
+.booking .when { font-weight: 700; }
+.booking .svc { font-size: 12px; padding: 3px 9px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); white-space: nowrap; }
+.booking dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 12px 0; font-size: 14px; }
+.booking dt { color: var(--muted); }
+.booking dd { margin: 0; }
+.booking .actions { display: flex; gap: 10px; }
+.booking .actions button { flex: 1; cursor: pointer; font-size: 13px; font-weight: 600; padding: 9px; border-radius: 9px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); }
+.booking .actions .done-btn { color: var(--ok); }
+.booking .actions .del-btn { color: var(--danger); }
+.tag-done { color: var(--ok); font-size: 12px; font-weight: 700; }
+
+@media (min-width: 620px) { .hero h1 { font-size: 46px; } }
+</style>
+</head>
+
+<body>
+
+<!-- ===================== PUBLIC SITE ===================== -->
+<div id="main">
+  <header class="site">
+    <div class="wrap nav">
+      <div class="brand">
+        <!-- Logo placeholder: swap this <div> for <img src="logo.png"> -->
+        <div class="logo">BB</div>
+        <span id="brandName">BB Details</span>
+      </div>
+      <a class="cta" href="#book">Book now</a>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <section class="hero" style="border-top:none">
+      <h1 id="heroName">BB Details</h1>
+      <p class="tag" id="heroTag"></p>
+      <div class="btn-row">
+        <a class="btn btn-primary" href="#book">Book a valet</a>
+        <a class="btn btn-ghost" href="#services">See prices</a>
+      </div>
+      <!-- Before / after photo placeholders. Replace each .photo with an <img>. -->
+      <div class="gallery">
+        <div class="photo"><span class="badge">Before</span>Add your<br>"before" photo</div>
+        <div class="photo"><span class="badge">After</span>Add your<br>"after" photo</div>
+      </div>
+    </section>
+
+    <section id="services">
+      <h2>Services &amp; pricing</h2>
+      <p class="sub">Simple, honest pricing. We bring everything we need.</p>
+      <div id="serviceList"></div>
+    </section>
+
+    <section id="book">
+      <h2>Book your valet</h2>
+      <p class="sub">Tell us what you need and we'll come to you.</p>
+
+      <form id="bookingForm" class="card" novalidate>
+        <div class="field">
+          <label>Name <span class="req">*</span></label>
+          <input type="text" name="name" autocomplete="name" required />
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label>Phone <span class="req">*</span></label>
+            <input type="tel" name="phone" autocomplete="tel" required />
+          </div>
+          <div class="field">
+            <label>Email <span class="req">*</span></label>
+            <input type="email" name="email" autocomplete="email" required />
+          </div>
+        </div>
+        <div class="field">
+          <label>Service <span class="req">*</span></label>
+          <select name="service" required>
+            <option value="" disabled selected>Choose a service…</option>
+          </select>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label>Date <span class="req">*</span></label>
+            <input type="date" name="date" required />
+          </div>
+          <div class="field">
+            <label>Time <span class="req">*</span></label>
+            <input type="time" name="time" required />
+          </div>
+        </div>
+        <div class="field">
+          <label>Car make &amp; model <span class="req">*</span></label>
+          <input type="text" name="car" placeholder="e.g. Ford Fiesta" required />
+        </div>
+        <div class="field">
+          <label>Postcode / address <span class="req">*</span></label>
+          <input type="text" name="address" placeholder="Where should we come to?" autocomplete="street-address" required />
+        </div>
+        <div class="field">
+          <label>Notes (optional)</label>
+          <textarea name="notes" placeholder="Anything we should know? Pet hair, parking, etc."></textarea>
+        </div>
+        <button type="submit" id="submitBtn" class="btn btn-primary btn-full">Request booking</button>
+        <p id="formError" class="form-error hidden"></p>
+      </form>
+
+      <div id="confirm" class="confirm hidden">
+        <div class="tick">✓</div>
+        <h3 style="margin:0 0 6px">Booking received!</h3>
+        <p id="confirmText" style="margin:0;color:var(--muted)"></p>
+        <button class="btn btn-ghost" style="margin-top:16px" onclick="resetBookingForm()">Make another booking</button>
+      </div>
+    </section>
+  </div>
+
+  <footer class="site">
+    <div class="wrap">
+      <div class="links">
+        <a id="fbLink" href="#" target="_blank" rel="noopener">Facebook</a>
+        <a id="phoneLink" href="#">Call us</a>
+      </div>
+      <p>&copy; <span id="year"></span> BB Details · Mobile car valeting</p>
+      <p><a class="admin-link" href="#admin">Owner login</a></p>
+    </div>
+  </footer>
+</div><!-- /#main -->
+
+
+<!-- ===================== ADMIN PAGE ===================== -->
+<div id="admin" class="hidden">
+  <header class="site">
+    <div class="wrap nav">
+      <div class="brand"><div class="logo">BB</div><span>Admin</span></div>
+      <a class="cta" href="#">View site</a>
+    </div>
+  </header>
+
+  <div class="wrap" style="padding-top:30px; padding-bottom:50px;">
+    <div id="adminLogin" class="card">
+      <h2 style="margin-top:0">Owner login</h2>
+      <p class="sub">Enter the admin password to view bookings.</p>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="adminPass" onkeydown="if(event.key==='Enter')tryAdminLogin()" />
+      </div>
+      <button class="btn btn-primary btn-full" id="loginBtn" onclick="tryAdminLogin()">Unlock</button>
+      <p id="adminError" class="form-error hidden">Wrong password — try again.</p>
+    </div>
+
+    <div id="adminPanel" class="hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <h2 style="margin:0">Bookings</h2>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost" style="padding:8px 14px;font-size:13px" onclick="loadBookings()">Refresh</button>
+          <button class="btn btn-ghost" style="padding:8px 14px;font-size:13px" onclick="lockAdmin()">Lock</button>
+        </div>
+      </div>
+      <p class="sub" id="adminCount"></p>
+      <div id="bookingsList"></div>
+    </div>
+  </div>
+</div><!-- /#admin -->
+
+
+<script>
+/* =====================================================================
+   JAVASCRIPT — page setup, online booking, admin panel, router.
+   ===================================================================== */
+
+/* ---- Talk to the backend (Supabase Edge Function) ---- */
+async function api(payload) {
+  const res = await fetch(CONFIG.apiUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  let data = {};
+  try { data = await res.json(); } catch {}
+  return { ok: res.ok, status: res.status, data };
+}
+
+function serviceById(id) { return CONFIG.services.find(s => s.id === id); }
+function money(n) { return "£" + n; }
+
+/* =====================================================================
+   1. POPULATE THE PAGE FROM CONFIG
+   ===================================================================== */
+function buildPage() {
+  document.getElementById("brandName").textContent = CONFIG.businessName;
+  document.getElementById("heroName").textContent  = CONFIG.businessName;
+  document.getElementById("heroTag").textContent   = CONFIG.tagline;
+  document.title = CONFIG.businessName + " — Mobile Car Valeting";
+
+  document.getElementById("serviceList").innerHTML = CONFIG.services.map(s => `
+    <div class="service">
+      <div class="info"><h3>${s.label}</h3><p>${s.blurb}</p></div>
+      <div class="price">${money(s.price)}</div>
+    </div>`).join("");
+
+  const sel = document.querySelector('select[name="service"]');
+  CONFIG.services.forEach(s => {
+    const opt = document.createElement("option");
+    opt.value = s.id;
+    opt.textContent = `${s.label} — ${money(s.price)}`;
+    sel.appendChild(opt);
+  });
+
+  document.getElementById("fbLink").href = CONFIG.facebookUrl;
+  const phone = document.getElementById("phoneLink");
+  phone.textContent = CONFIG.phone;
+  phone.href = "tel:" + CONFIG.phone.replace(/\s+/g, "");
+  document.getElementById("year").textContent = new Date().getFullYear();
+
+  document.querySelector('input[name="date"]').min = new Date().toISOString().split("T")[0];
+}
+
+/* =====================================================================
+   2. BOOKING FORM SUBMIT  (sends to the online backend)
+   ===================================================================== */
+document.getElementById("bookingForm").addEventListener("submit", async function (e) {
+  e.preventDefault();
+  if (!this.checkValidity()) { this.reportValidity(); return; }
+
+  const data = Object.fromEntries(new FormData(this).entries());
+  const svc = serviceById(data.service);
+  const btn = document.getElementById("submitBtn");
+  const errEl = document.getElementById("formError");
+  errEl.classList.add("hidden");
+
+  // Column names here must match the database / server function.
+  const booking = {
+    name: data.name.trim(), phone: data.phone.trim(), email: data.email.trim(),
+    service_id: data.service, service_label: svc ? svc.label : data.service,
+    price: svc ? svc.price : null,
+    booking_date: data.date, booking_time: data.time,
+    car: data.car.trim(), address: data.address.trim(), notes: data.notes.trim()
+  };
+
+  btn.disabled = true; btn.textContent = "Sending…";
+  try {
+    const { ok } = await api({ action: "create", booking });
+    if (!ok) throw new Error();
+    // Success: show confirmation, hide the form
+    this.classList.add("hidden");
+    const confirm = document.getElementById("confirm");
+    confirm.classList.remove("hidden");
+    document.getElementById("confirmText").textContent =
+      `Thanks ${booking.name}! We've got your request for a ${booking.service_label} on ` +
+      `${formatDate(booking.booking_date)} at ${booking.booking_time}. We'll call ${booking.phone} to confirm.`;
+    confirm.scrollIntoView({ behavior: "smooth", block: "center" });
+  } catch {
+    errEl.textContent = "Sorry — something went wrong sending your booking. Please check your connection and try again, or call us.";
+    errEl.classList.remove("hidden");
+  } finally {
+    btn.disabled = false; btn.textContent = "Request booking";
+  }
+});
+
+function resetBookingForm() {
+  const form = document.getElementById("bookingForm");
+  form.reset();
+  form.classList.remove("hidden");
+  document.getElementById("confirm").classList.add("hidden");
+  form.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+/* =====================================================================
+   3. ADMIN PAGE  (password checked on the server)
+   ===================================================================== */
+// The password is held only in memory for this tab while you're logged in.
+let adminPassword = sessionStorage.getItem("bb_admin_pw") || null;
+
+async function tryAdminLogin() {
+  const val = document.getElementById("adminPass").value;
+  const btn = document.getElementById("loginBtn");
+  const err = document.getElementById("adminError");
+  err.classList.add("hidden");
+  btn.disabled = true; btn.textContent = "Checking…";
+  try {
+    const { ok, status, data } = await api({ action: "list", password: val });
+    if (status === 401) { err.textContent = "Wrong password — try again."; err.classList.remove("hidden"); return; }
+    if (!ok) throw new Error();
+    adminPassword = val;
+    sessionStorage.setItem("bb_admin_pw", val);
+    showAdminPanel(data.bookings || []);
+  } catch {
+    err.textContent = "Couldn't reach the server. Check your connection and try again.";
+    err.classList.remove("hidden");
+  } finally {
+    btn.disabled = false; btn.textContent = "Unlock";
+  }
+}
+
+function lockAdmin() {
+  adminPassword = null;
+  sessionStorage.removeItem("bb_admin_pw");
+  document.getElementById("adminPanel").classList.add("hidden");
+  document.getElementById("adminLogin").classList.remove("hidden");
+  document.getElementById("adminPass").value = "";
+}
+
+function showAdminPanel(bookings) {
+  document.getElementById("adminLogin").classList.add("hidden");
+  document.getElementById("adminError").classList.add("hidden");
+  document.getElementById("adminPanel").classList.remove("hidden");
+  renderBookings(bookings);
+}
+
+// Re-fetch the latest bookings from the server.
+async function loadBookings() {
+  if (!adminPassword) return;
+  const { ok, data } = await api({ action: "list", password: adminPassword });
+  if (ok) renderBookings(data.bookings || []);
+}
+
+function renderBookings(list) {
+  // Server already sorts by date+time, but sort again to be safe.
+  list.sort((a, b) => (a.booking_date + a.booking_time).localeCompare(b.booking_date + b.booking_time));
+
+  const pending = list.filter(b => !b.completed).length;
+  document.getElementById("adminCount").textContent = list.length
+    ? `${list.length} total · ${pending} pending`
+    : "No bookings yet.";
+
+  document.getElementById("bookingsList").innerHTML = list.map(b => `
+    <div class="booking ${b.completed ? "done" : ""}">
+      <div class="top">
+        <div>
+          <div class="when">${formatDate(b.booking_date)} · ${b.booking_time}</div>
+          ${b.completed ? '<span class="tag-done">✓ Completed</span>' : ''}
+        </div>
+        <span class="svc">${esc(b.service_label)}${b.price != null ? " · " + money(b.price) : ""}</span>
+      </div>
+      <dl>
+        <dt>Name</dt><dd>${esc(b.name)}</dd>
+        <dt>Phone</dt><dd><a href="tel:${esc(b.phone)}">${esc(b.phone)}</a></dd>
+        <dt>Email</dt><dd><a href="mailto:${esc(b.email)}">${esc(b.email)}</a></dd>
+        <dt>Car</dt><dd>${esc(b.car)}</dd>
+        <dt>Address</dt><dd>${esc(b.address)}</dd>
+        ${b.notes ? `<dt>Notes</dt><dd>${esc(b.notes)}</dd>` : ""}
+      </dl>
+      <div class="actions">
+        <button class="done-btn" onclick="toggleComplete('${b.id}', ${!b.completed})">
+          ${b.completed ? "Mark as pending" : "Mark completed"}
+        </button>
+        <button class="del-btn" onclick="deleteBooking('${b.id}')">Delete</button>
+      </div>
+    </div>`).join("");
+}
+
+async function toggleComplete(id, completed) {
+  const { ok } = await api({ action: "complete", password: adminPassword, id, completed });
+  if (ok) loadBookings();
+}
+async function deleteBooking(id) {
+  if (!confirm("Delete this booking? This can't be undone.")) return;
+  const { ok } = await api({ action: "delete", password: adminPassword, id });
+  if (ok) loadBookings();
+}
+
+/* =====================================================================
+   4. HELPERS
+   ===================================================================== */
+function formatDate(iso) {
+  if (!iso) return "";
+  const d = new Date(iso + "T00:00:00");
+  return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+}
+function esc(str) {
+  return String(str ?? "").replace(/[&<>"']/g, c =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+/* =====================================================================
+   5. TINY ROUTER — show admin when URL hash is #admin, else the site
+   ===================================================================== */
+function route() {
+  const isAdmin = location.hash === "#admin";
+  document.getElementById("admin").classList.toggle("hidden", !isAdmin);
+  document.getElementById("main").classList.toggle("hidden", isAdmin);
+  if (isAdmin) {
+    window.scrollTo(0, 0);
+    // If we still have a password from earlier this tab, try to go straight
+    // to the panel; if it no longer works, fall back to the login screen.
+    if (adminPassword) {
+      api({ action: "list", password: adminPassword }).then(({ ok, data }) => {
+        if (ok) showAdminPanel(data.bookings || []);
+        else lockAdmin();
+      });
+    }
+  }
+}
+window.addEventListener("hashchange", route);
+
+buildPage();
+route();
+</script>
+
+</body>
+</html>
