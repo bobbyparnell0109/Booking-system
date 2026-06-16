@@ -160,6 +160,13 @@ section .sub { color: var(--muted); margin: 0 0 22px; }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .btn-full { width: 100%; text-align: center; }
 .form-error { color: var(--danger); font-size: 14px; margin: 12px 0 0; }
+.form-hint { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
+
+/* Availability rows in the owner page */
+.slot-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+.slot-row:last-child { border-bottom: none; }
+.slot-row .slot-del { cursor: pointer; font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-2); color: var(--danger); }
+.slot-day { margin: 16px 0 4px; font-size: 13px; font-weight: 700; color: var(--muted); }
 
 .confirm {
   background: rgba(62,207,142,0.08); border: 1px solid rgba(62,207,142,0.4); color: var(--text);
@@ -255,15 +262,12 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
             <option value="" disabled selected>Choose a service…</option>
           </select>
         </div>
-        <div class="row2">
-          <div class="field">
-            <label>Date <span class="req">*</span></label>
-            <input type="date" name="date" required />
-          </div>
-          <div class="field">
-            <label>Time <span class="req">*</span></label>
-            <input type="time" name="time" required />
-          </div>
+        <div class="field">
+          <label>Available time <span class="req">*</span></label>
+          <select name="slot" id="slotSelect" required>
+            <option value="" disabled selected>Loading available times…</option>
+          </select>
+          <p id="slotHint" class="form-hint"></p>
         </div>
         <div class="field">
           <label>Car make &amp; model <span class="req">*</span></label>
@@ -325,12 +329,42 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
     </div>
 
     <div id="adminPanel" class="hidden">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <h2 style="margin:0">Bookings</h2>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-ghost" style="padding:8px 14px;font-size:13px" onclick="loadBookings()">Refresh</button>
-          <button class="btn btn-ghost" style="padding:8px 14px;font-size:13px" onclick="lockAdmin()">Lock</button>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h2 style="margin:0">Owner dashboard</h2>
+        <button class="btn btn-ghost" style="padding:8px 14px;font-size:13px" onclick="lockAdmin()">Lock</button>
+      </div>
+
+      <!-- ===== Availability manager ===== -->
+      <div class="card" style="margin-bottom:18px">
+        <h3 style="margin-top:0">Your free times</h3>
+        <p class="sub" style="margin-bottom:16px">Add the times you're each available. Customers can only book these. If you're both free at the same time, it's offered as "together".</p>
+        <div class="row2">
+          <div class="field" style="margin-bottom:12px">
+            <label>Who's free</label>
+            <select id="slotPerson"></select>
+          </div>
+          <div class="field" style="margin-bottom:12px">
+            <label>Date</label>
+            <input type="date" id="slotDate" />
+          </div>
         </div>
+        <div class="row2">
+          <div class="field" style="margin-bottom:12px">
+            <label>Time</label>
+            <input type="time" id="slotTime" />
+          </div>
+          <div class="field" style="margin-bottom:12px; display:flex; align-items:flex-end">
+            <button class="btn btn-primary btn-full" id="addSlotBtn" onclick="addSlot()">Add time</button>
+          </div>
+        </div>
+        <p id="slotMsg" class="form-hint"></p>
+        <div id="slotList" style="margin-top:10px"></div>
+      </div>
+
+      <!-- ===== Bookings ===== -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <h3 style="margin:0">Bookings</h3>
+        <button class="btn btn-ghost" style="padding:8px 14px;font-size:13px" onclick="loadBookings()">Refresh</button>
       </div>
       <p class="sub" id="adminCount"></p>
       <div id="bookingsList"></div>
@@ -395,7 +429,43 @@ function buildPage() {
 
   document.getElementById("year").textContent = new Date().getFullYear();
 
-  document.querySelector('input[name="date"]').min = new Date().toISOString().split("T")[0];
+  // Fill the booking dropdown with the owners' open times.
+  loadSlots();
+}
+
+/* ---- Build the customer's "Available time" dropdown ----
+   Open slots are grouped by date+time. If more than one person is free at
+   the same time, they're combined into one "together" option. */
+let slotOptions = [];  // each: { date, time, detailer, ids[], label }
+async function loadSlots() {
+  const sel = document.getElementById("slotSelect");
+  const hint = document.getElementById("slotHint");
+  const { ok, data } = await api({ action: "slots" });
+  if (!ok) {
+    sel.innerHTML = '<option value="" disabled selected>Couldn\'t load times — please call us</option>';
+    return;
+  }
+  const groups = {};
+  (data.slots || []).forEach(s => {
+    const key = s.slot_date + "|" + s.slot_time;
+    (groups[key] = groups[key] || []).push(s);
+  });
+  slotOptions = Object.keys(groups).sort().map(key => {
+    const [date, time] = key.split("|");
+    const people = groups[key].map(s => s.person);
+    const ids = groups[key].map(s => s.id);
+    const detailer = people.length > 1 ? people.join(" & ") + " (together)" : people[0];
+    return { date, time, detailer, ids, label: `${formatDate(date)}, ${time} — with ${detailer}` };
+  });
+
+  if (!slotOptions.length) {
+    sel.innerHTML = '<option value="" disabled selected>No times available right now</option>';
+    hint.textContent = "We've no free slots listed at the moment — give us a call and we'll sort something out.";
+    return;
+  }
+  sel.innerHTML = '<option value="" disabled selected>Choose an available time…</option>' +
+    slotOptions.map((o, i) => `<option value="${i}">${esc(o.label)}</option>`).join("");
+  hint.textContent = "";
 }
 
 /* =====================================================================
@@ -407,22 +477,36 @@ document.getElementById("bookingForm").addEventListener("submit", async function
 
   const data = Object.fromEntries(new FormData(this).entries());
   const svc = serviceById(data.service);
+  const slot = slotOptions[Number(data.slot)];
   const btn = document.getElementById("submitBtn");
   const errEl = document.getElementById("formError");
   errEl.classList.add("hidden");
+
+  if (!slot) {
+    errEl.textContent = "Please choose an available time.";
+    errEl.classList.remove("hidden");
+    return;
+  }
 
   // Column names here must match the database / server function.
   const booking = {
     name: data.name.trim(), phone: data.phone.trim(), email: data.email.trim(),
     service_id: data.service, service_label: svc ? svc.label : data.service,
     price: svc ? svc.price : null,
-    booking_date: data.date, booking_time: data.time,
+    booking_date: slot.date, booking_time: slot.time, detailer: slot.detailer,
     car: data.car.trim(), address: data.address.trim(), notes: data.notes.trim()
   };
 
   btn.disabled = true; btn.textContent = "Sending…";
   try {
-    const { ok } = await api({ action: "create", booking });
+    const { ok, status } = await api({ action: "create", booking, slot_ids: slot.ids });
+    if (status === 409) {
+      // Someone booked that time first — refresh the list and ask them to repick.
+      errEl.textContent = "Sorry, that time was just booked by someone else. Please pick another.";
+      errEl.classList.remove("hidden");
+      await loadSlots();
+      return;
+    }
     if (!ok) throw new Error();
     // Success: show confirmation, hide the form
     this.classList.add("hidden");
@@ -430,7 +514,7 @@ document.getElementById("bookingForm").addEventListener("submit", async function
     confirm.classList.remove("hidden");
     document.getElementById("confirmText").textContent =
       `Thanks ${booking.name}! We've got your request for a ${booking.service_label} on ` +
-      `${formatDate(booking.booking_date)} at ${booking.booking_time}. We'll call ${booking.phone} to confirm.`;
+      `${formatDate(booking.booking_date)} at ${booking.booking_time} with ${booking.detailer}. We'll call ${booking.phone} to confirm.`;
     confirm.scrollIntoView({ behavior: "smooth", block: "center" });
   } catch {
     errEl.textContent = "Sorry — something went wrong sending your booking. Please check your connection and try again, or call us.";
@@ -445,6 +529,7 @@ function resetBookingForm() {
   form.reset();
   form.classList.remove("hidden");
   document.getElementById("confirm").classList.add("hidden");
+  loadSlots(); // refresh times so a just-booked slot no longer shows
   form.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -487,7 +572,69 @@ function showAdminPanel(bookings) {
   document.getElementById("adminLogin").classList.add("hidden");
   document.getElementById("adminError").classList.add("hidden");
   document.getElementById("adminPanel").classList.remove("hidden");
+
+  // Populate the "Who's free" dropdown from your contacts (Bobby, Bramley…).
+  const personSel = document.getElementById("slotPerson");
+  if (!personSel.options.length) {
+    personSel.innerHTML = CONFIG.contacts
+      .map(c => `<option value="${esc(c.name)}">${esc(c.name)}</option>`).join("");
+  }
+  // Default the date picker to today and stop past dates being chosen.
+  const dateInput = document.getElementById("slotDate");
+  dateInput.min = new Date().toISOString().split("T")[0];
+
   renderBookings(bookings);
+  loadAdminSlots();
+}
+
+/* ---- Availability management (owner) ---- */
+async function loadAdminSlots() {
+  const { ok, data } = await api({ action: "list_slots", password: adminPassword });
+  if (ok) renderAdminSlots(data.slots || []);
+}
+
+function renderAdminSlots(list) {
+  const box = document.getElementById("slotList");
+  if (!list.length) { box.innerHTML = '<p class="sub" style="margin:0">No times added yet.</p>'; return; }
+
+  // Group by date so the list is easy to scan.
+  const byDay = {};
+  list.forEach(s => { (byDay[s.slot_date] = byDay[s.slot_date] || []).push(s); });
+
+  box.innerHTML = Object.keys(byDay).sort().map(date => `
+    <div class="slot-day">${formatDate(date)}</div>
+    ${byDay[date].map(s => `
+      <div class="slot-row">
+        <span>${s.slot_time} · ${esc(s.person)}${s.booked ? ' · <span class="tag-done">Booked</span>' : ''}</span>
+        ${s.booked ? '' : `<button class="slot-del" onclick="deleteSlot('${s.id}')">Remove</button>`}
+      </div>`).join("")}
+  `).join("");
+}
+
+async function addSlot() {
+  const person = document.getElementById("slotPerson").value;
+  const slot_date = document.getElementById("slotDate").value;
+  const slot_time = document.getElementById("slotTime").value;
+  const msg = document.getElementById("slotMsg");
+  const btn = document.getElementById("addSlotBtn");
+
+  if (!slot_date || !slot_time) { msg.textContent = "Pick a date and time first."; return; }
+
+  btn.disabled = true; btn.textContent = "Adding…";
+  const { ok } = await api({ action: "add_slot", password: adminPassword, slot: { person, slot_date, slot_time } });
+  btn.disabled = false; btn.textContent = "Add time";
+  if (ok) {
+    msg.textContent = `Added ${person} · ${formatDate(slot_date)} at ${slot_time}.`;
+    document.getElementById("slotTime").value = "";
+    loadAdminSlots();
+  } else {
+    msg.textContent = "Couldn't add that time — please try again.";
+  }
+}
+
+async function deleteSlot(id) {
+  const { ok } = await api({ action: "delete_slot", password: adminPassword, id });
+  if (ok) loadAdminSlots();
 }
 
 // Re-fetch the latest bookings from the server.
@@ -519,6 +666,7 @@ function renderBookings(list) {
         <dt>Name</dt><dd>${esc(b.name)}</dd>
         <dt>Phone</dt><dd><a href="tel:${esc(b.phone)}">${esc(b.phone)}</a></dd>
         <dt>Email</dt><dd><a href="mailto:${esc(b.email)}">${esc(b.email)}</a></dd>
+        ${b.detailer ? `<dt>Detailer</dt><dd>${esc(b.detailer)}</dd>` : ""}
         <dt>Car</dt><dd>${esc(b.car)}</dd>
         <dt>Address</dt><dd>${esc(b.address)}</dd>
         ${b.notes ? `<dt>Notes</dt><dd>${esc(b.notes)}</dd>` : ""}
