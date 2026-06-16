@@ -49,8 +49,12 @@ const CONFIG = {
     { id: "full",     label: "Full Valet",     price: 40, blurb: "The lot — inside and out. Our most popular booking." }
   ],
 
-  // Contact + social (placeholders — swap for your real details).
-  phone: "07XXX XXXXXX",                       // EDIT: your phone number
+  // Contact numbers shown in the footer. Add, remove or rename people freely
+  // — each one becomes a tappable "Call <name>" link.
+  contacts: [
+    { name: "Bobby",   phone: "07903 512940" },
+    { name: "Bramley", phone: "07434 651512" }
+  ],
   facebookUrl: "https://www.facebook.com/",    // EDIT: your Facebook page
 
   // The online backend this site talks to (your Supabase project).
@@ -288,9 +292,9 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
 
   <footer class="site">
     <div class="wrap">
-      <div class="links">
+      <div class="links" id="footerLinks">
         <a id="fbLink" href="#" target="_blank" rel="noopener">Facebook</a>
-        <a id="phoneLink" href="#">Call us</a>
+        <!-- "Call <name>" links are added here automatically from CONFIG.contacts -->
       </div>
       <p>&copy; <span id="year"></span> BB Details · Mobile car valeting</p>
       <p><a class="admin-link" href="#admin">Owner login</a></p>
@@ -379,9 +383,16 @@ function buildPage() {
   });
 
   document.getElementById("fbLink").href = CONFIG.facebookUrl;
-  const phone = document.getElementById("phoneLink");
-  phone.textContent = CONFIG.phone;
-  phone.href = "tel:" + CONFIG.phone.replace(/\s+/g, "");
+
+  // Add a tappable "Call <name>: <number>" link for each contact.
+  const footerLinks = document.getElementById("footerLinks");
+  CONFIG.contacts.forEach(c => {
+    const a = document.createElement("a");
+    a.href = "tel:" + c.phone.replace(/\s+/g, "");
+    a.textContent = `Call ${c.name}: ${c.phone}`;
+    footerLinks.appendChild(a);
+  });
+
   document.getElementById("year").textContent = new Date().getFullYear();
 
   document.querySelector('input[name="date"]').min = new Date().toISOString().split("T")[0];
