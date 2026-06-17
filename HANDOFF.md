@@ -91,7 +91,7 @@ tools — no user action needed.
 ### Business rules (constants in the Edge Function)
 - `JOB_MINUTES = 150` — each valet takes 2½ hours.
 - `STEP_MINUTES = 30` — bookable start times every 30 minutes.
-- `HORIZON_DAYS = 28` — how many days ahead bookings are offered.
+- `HORIZON_DAYS = 42` — how many days ahead bookings are offered (6 weeks).
 - `PERSONS = ["Bobby", "Bramley"]` — the two detailers.
 - `DEFAULT_HOURS` — **weekdays (Mon–Fri) 16:30–19:00** (after school),
   **weekends (Sat/Sun) 10:00–18:00**. Applies to both people automatically.
@@ -201,7 +201,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 const ADMIN_PASSWORD = "bbdetails2026";  // <-- change me
 const JOB_MINUTES = 150;                 // length of one valet (2.5 hours)
 const STEP_MINUTES = 30;                 // offer a start time every 30 mins
-const HORIZON_DAYS = 28;                 // how many days ahead to offer bookings
+const HORIZON_DAYS = 42;                 // how many days ahead to offer bookings (6 weeks)
 const PERSONS = ["Bobby", "Bramley"];    // the two detailers
 
 // Standard working hours assumed automatically every day. Owners book TIME OFF
