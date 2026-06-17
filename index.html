@@ -363,33 +363,27 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
         <button class="btn btn-ghost" style="padding:8px 14px;font-size:13px" onclick="lockAdmin()">Lock</button>
       </div>
 
-      <!-- ===== Availability manager ===== -->
+      <!-- ===== Time off manager ===== -->
       <div class="card" style="margin-bottom:18px">
-        <h3 style="margin-top:0">Your free times</h3>
-        <p class="sub" style="margin-bottom:16px">Add the hours you're each free on a day (e.g. 09:00 to 17:00). Customers can pick a start time every 30 minutes, and each job lasts 2½ hours. When a time is booked, every start time that would clash with that 2½-hour job is removed automatically. If you're both free at a time, it's offered as "together".</p>
+        <h3 style="margin-top:0">Time off / holidays</h3>
+        <p class="sub" style="margin-bottom:16px">You're both assumed free automatically: <strong>weekdays 4:30pm–7:00pm</strong> (after school) and <strong>weekends 10:00am–6:00pm</strong>. Add any days you're <em>not</em> available below — those days stop being offered to customers. Pick a "from" and "to" date to block several days at once (e.g. a holiday); leave "to" blank for a single day.</p>
         <div class="row2">
           <div class="field" style="margin-bottom:12px">
-            <label>Who's free</label>
-            <select id="slotPerson"></select>
+            <label>Who's off</label>
+            <select id="offPerson"></select>
           </div>
           <div class="field" style="margin-bottom:12px">
-            <label>Date</label>
-            <input type="date" id="slotDate" />
+            <label>From date</label>
+            <input type="date" id="offStart" />
           </div>
         </div>
-        <div class="row2">
-          <div class="field" style="margin-bottom:12px">
-            <label>Free from</label>
-            <input type="time" id="slotStart" />
-          </div>
-          <div class="field" style="margin-bottom:12px">
-            <label>Free until</label>
-            <input type="time" id="slotEnd" />
-          </div>
+        <div class="field" style="margin-bottom:12px">
+          <label>To date <span style="font-weight:400">(optional — leave blank for one day)</span></label>
+          <input type="date" id="offEnd" />
         </div>
-        <button class="btn btn-primary btn-full" id="addSlotBtn" onclick="addRange()">Add availability</button>
-        <p id="slotMsg" class="form-hint"></p>
-        <div id="slotList" style="margin-top:10px"></div>
+        <button class="btn btn-primary btn-full" id="addOffBtn" onclick="addTimeOff()">Add time off</button>
+        <p id="offMsg" class="form-hint"></p>
+        <div id="offList" style="margin-top:10px"></div>
       </div>
 
       <!-- ===== Bookings ===== -->
@@ -665,71 +659,72 @@ function showAdminPanel(bookings) {
   document.getElementById("adminError").classList.add("hidden");
   document.getElementById("adminPanel").classList.remove("hidden");
 
-  // Populate the "Who's free" dropdown from your contacts (Bobby, Bramley…).
-  const personSel = document.getElementById("slotPerson");
+  // Populate the "Who's off" dropdown from your contacts, plus a "Both" option.
+  const personSel = document.getElementById("offPerson");
   if (!personSel.options.length) {
     personSel.innerHTML = CONFIG.contacts
-      .map(c => `<option value="${esc(c.name)}">${esc(c.name)}</option>`).join("");
+      .map(c => `<option value="${esc(c.name)}">${esc(c.name)}</option>`).join("")
+      + (CONFIG.contacts.length > 1 ? `<option value="Both">Both</option>` : "");
   }
-  // Default the date picker to today and stop past dates being chosen.
-  const dateInput = document.getElementById("slotDate");
-  dateInput.min = new Date().toISOString().split("T")[0];
+  // Stop past dates being chosen for time off.
+  const todayStr = new Date().toISOString().split("T")[0];
+  document.getElementById("offStart").min = todayStr;
+  document.getElementById("offEnd").min = todayStr;
 
   renderBookings(bookings);
-  loadAdminRanges();
+  loadTimeOff();
 }
 
-/* ---- Availability management (owner) ---- */
-async function loadAdminRanges() {
-  const { ok, data } = await api({ action: "list_ranges", password: adminPassword });
-  if (ok) renderAdminRanges(data.ranges || []);
+/* ---- Time off management (owner) ----
+   The default working hours are automatic; here owners block the days they're
+   NOT available (holidays, days off). A blank "to" date means a single day. */
+async function loadTimeOff() {
+  const { ok, data } = await api({ action: "list_time_off", password: adminPassword });
+  if (ok) renderTimeOff(data.time_off || []);
 }
 
-function renderAdminRanges(list) {
-  const box = document.getElementById("slotList");
-  if (!list.length) { box.innerHTML = '<p class="sub" style="margin:0">No free times added yet.</p>'; return; }
-
-  // Group by date so the list is easy to scan.
-  const byDay = {};
-  list.forEach(r => { (byDay[r.avail_date] = byDay[r.avail_date] || []).push(r); });
-
-  box.innerHTML = Object.keys(byDay).sort().map(date => `
-    <div class="slot-day">${formatDate(date)}</div>
-    ${byDay[date].map(r => `
-      <div class="slot-row">
-        <span>${r.start_time}–${r.end_time} · ${esc(r.person)}</span>
-        <button class="slot-del" onclick="deleteRange('${r.id}')">Remove</button>
-      </div>`).join("")}
-  `).join("");
+function renderTimeOff(list) {
+  const box = document.getElementById("offList");
+  if (!list.length) {
+    box.innerHTML = '<p class="sub" style="margin:0">No time off booked — you\'re on the standard hours every day.</p>';
+    return;
+  }
+  box.innerHTML = list.map(t => `
+    <div class="slot-row">
+      <span>${esc(t.person)} · ${formatDate(t.start_date)}${t.end_date && t.end_date !== t.start_date ? " → " + formatDate(t.end_date) : ""}</span>
+      <button class="slot-del" onclick="deleteTimeOff('${t.id}')">Remove</button>
+    </div>`).join("");
 }
 
-async function addRange() {
-  const person = document.getElementById("slotPerson").value;
-  const avail_date = document.getElementById("slotDate").value;
-  const start_time = document.getElementById("slotStart").value;
-  const end_time = document.getElementById("slotEnd").value;
-  const msg = document.getElementById("slotMsg");
-  const btn = document.getElementById("addSlotBtn");
+async function addTimeOff() {
+  const person = document.getElementById("offPerson").value;
+  const start_date = document.getElementById("offStart").value;
+  const end_date = document.getElementById("offEnd").value;  // may be ""
+  const msg = document.getElementById("offMsg");
+  const btn = document.getElementById("addOffBtn");
 
-  if (!avail_date || !start_time || !end_time) { msg.textContent = "Pick a date, a 'from' time and a 'until' time."; return; }
-  if (end_time <= start_time) { msg.textContent = "'Free until' must be after 'free from'."; return; }
+  if (!start_date) { msg.textContent = "Pick a 'from' date."; return; }
+  if (end_date && end_date < start_date) { msg.textContent = "'To' date must be on or after the 'from' date."; return; }
 
   btn.disabled = true; btn.textContent = "Adding…";
-  const { ok } = await api({ action: "add_range", password: adminPassword, range: { person, avail_date, start_time, end_time } });
-  btn.disabled = false; btn.textContent = "Add availability";
+  const { ok } = await api({ action: "add_time_off", password: adminPassword, time_off: { person, start_date, end_date } });
+  btn.disabled = false; btn.textContent = "Add time off";
   if (ok) {
-    msg.textContent = `Added ${person} · ${formatDate(avail_date)}, ${start_time}–${end_time}.`;
-    document.getElementById("slotStart").value = "";
-    document.getElementById("slotEnd").value = "";
-    loadAdminRanges();
+    const who = person === "Both" ? "Bobby & Bramley" : person;
+    const range = end_date && end_date !== start_date
+      ? `${formatDate(start_date)} → ${formatDate(end_date)}` : formatDate(start_date);
+    msg.textContent = `Booked ${who} off: ${range}.`;
+    document.getElementById("offStart").value = "";
+    document.getElementById("offEnd").value = "";
+    loadTimeOff();
   } else {
     msg.textContent = "Couldn't add that — please try again.";
   }
 }
 
-async function deleteRange(id) {
-  const { ok } = await api({ action: "delete_range", password: adminPassword, id });
-  if (ok) loadAdminRanges();
+async function deleteTimeOff(id) {
+  const { ok } = await api({ action: "delete_time_off", password: adminPassword, id });
+  if (ok) loadTimeOff();
 }
 
 // Re-fetch the latest bookings from the server.
