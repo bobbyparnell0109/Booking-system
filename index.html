@@ -112,14 +112,8 @@ header.site {
   border-bottom: 1px solid var(--border);
 }
 .nav { display: flex; align-items: center; justify-content: space-between; height: 60px; }
-.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: 0.2px; }
-.logo {
-  width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; overflow: hidden;
-  background: linear-gradient(145deg, #2a2a2e, #131315); border: 1px solid var(--border);
-  font-weight: 800; font-size: 15px; color: var(--text);
-}
-.logo.has-img { width: auto; height: 40px; background: none; border: none; border-radius: 0; }
-.logo img { height: 100%; width: auto; object-fit: contain; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; letter-spacing: 0.2px; }
+.admin-tag { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); border: 1px solid var(--border); padding: 3px 8px; border-radius: 999px; }
 .nav a.cta {
   background: var(--accent); color: var(--accent-ink); text-decoration: none;
   font-weight: 600; font-size: 14px; padding: 9px 16px; border-radius: 999px;
@@ -243,8 +237,6 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
   <header class="site">
     <div class="wrap nav">
       <div class="brand">
-        <!-- Logo: set CONFIG.logoUrl to swap this for your image automatically. -->
-        <div class="logo" id="logoBox">BB</div>
         <span id="brandName">BB Car Detailing</span>
       </div>
       <a class="cta" href="#book">Book now</a>
@@ -349,7 +341,7 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
 <div id="admin" class="hidden">
   <header class="site">
     <div class="wrap nav">
-      <div class="brand"><div class="logo" id="adminLogoBox">BB</div><span>Admin</span></div>
+      <div class="brand"><span id="adminBrandName">BB Car Detailing</span><span class="admin-tag">Admin</span></div>
       <a class="cta" href="#">View site</a>
     </div>
   </header>
@@ -452,17 +444,14 @@ function buildPage() {
 
   document.getElementById("fbLink").href = CONFIG.facebookUrl;
 
-  // Logo: if a logo image is set, swap the "BB" boxes for it (header + admin),
-  // feature it large in the hero, and hide the now-redundant brand/hero text.
+  // The sticky header and owner bar use clean text branding (the wide wordmark
+  // logo looks cramped/clipped when shrunk into a small bar).
+  const adminBrand = document.getElementById("adminBrandName");
+  if (adminBrand) adminBrand.textContent = CONFIG.businessName;
+
+  // Logo: if one is set, feature it large in the hero only (keep the H1 text
+  // for SEO/screen readers by hiding it visually rather than removing it).
   if (CONFIG.logoUrl) {
-    const img = `<img src="${esc(CONFIG.logoUrl)}" alt="${esc(CONFIG.businessName)} logo">`;
-    ["logoBox", "adminLogoBox"].forEach(id => {
-      const box = document.getElementById(id);
-      if (box) { box.innerHTML = img; box.classList.add("has-img"); }
-    });
-    // The wordmark logo already says the name, so hide the header text label.
-    document.getElementById("brandName").classList.add("hidden");
-    // Feature the logo at the top of the hero; keep the H1 text for SEO/readers.
     const heroLogo = document.getElementById("heroLogo");
     heroLogo.src = CONFIG.logoUrl;
     heroLogo.alt = CONFIG.businessName;
