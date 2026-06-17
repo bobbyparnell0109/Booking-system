@@ -291,17 +291,15 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
             <option value="" disabled selected>Choose a service…</option>
           </select>
         </div>
-        <div class="row2">
-          <div class="field" style="margin-bottom:0">
-            <label>Date <span class="req">*</span></label>
-            <input type="date" name="date" id="dateSelect" required />
-          </div>
-          <div class="field" style="margin-bottom:0">
-            <label>Time <span class="req">*</span></label>
-            <select name="slot" id="slotSelect" required disabled>
-              <option value="" disabled selected>Choose a date first…</option>
-            </select>
-          </div>
+        <div class="field">
+          <label>Date <span class="req">*</span></label>
+          <input type="date" name="date" id="dateSelect" required />
+        </div>
+        <div class="field">
+          <label>Time <span class="req">*</span></label>
+          <select name="slot" id="slotSelect" required disabled>
+            <option value="" disabled selected>Choose a date first…</option>
+          </select>
         </div>
         <p id="slotHint" class="form-hint"></p>
         <div class="field">
