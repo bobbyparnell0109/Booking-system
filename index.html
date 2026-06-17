@@ -337,7 +337,7 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
       <!-- ===== Availability manager ===== -->
       <div class="card" style="margin-bottom:18px">
         <h3 style="margin-top:0">Your free times</h3>
-        <p class="sub" style="margin-bottom:16px">Add the times you're each available. Customers can only book these. If you're both free at the same time, it's offered as "together".</p>
+        <p class="sub" style="margin-bottom:16px">Add the hours you're each free on a day (e.g. 09:00 to 17:00). Customers can pick a start time every 30 minutes, and each job lasts 2½ hours. When a time is booked, every start time that would clash with that 2½-hour job is removed automatically. If you're both free at a time, it's offered as "together".</p>
         <div class="row2">
           <div class="field" style="margin-bottom:12px">
             <label>Who's free</label>
@@ -350,13 +350,15 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
         </div>
         <div class="row2">
           <div class="field" style="margin-bottom:12px">
-            <label>Time</label>
-            <input type="time" id="slotTime" />
+            <label>Free from</label>
+            <input type="time" id="slotStart" />
           </div>
-          <div class="field" style="margin-bottom:12px; display:flex; align-items:flex-end">
-            <button class="btn btn-primary btn-full" id="addSlotBtn" onclick="addSlot()">Add time</button>
+          <div class="field" style="margin-bottom:12px">
+            <label>Free until</label>
+            <input type="time" id="slotEnd" />
           </div>
         </div>
+        <button class="btn btn-primary btn-full" id="addSlotBtn" onclick="addRange()">Add availability</button>
         <p id="slotMsg" class="form-hint"></p>
         <div id="slotList" style="margin-top:10px"></div>
       </div>
@@ -453,9 +455,8 @@ async function loadSlots() {
   slotOptions = Object.keys(groups).sort().map(key => {
     const [date, time] = key.split("|");
     const people = groups[key].map(s => s.person);
-    const ids = groups[key].map(s => s.id);
     const detailer = people.length > 1 ? people.join(" & ") + " (together)" : people[0];
-    return { date, time, detailer, ids, label: `${formatDate(date)}, ${time} — with ${detailer}` };
+    return { date, time, detailer, persons: people, label: `${formatDate(date)}, ${time} — with ${detailer}` };
   });
 
   if (!slotOptions.length) {
@@ -499,7 +500,7 @@ document.getElementById("bookingForm").addEventListener("submit", async function
 
   btn.disabled = true; btn.textContent = "Sending…";
   try {
-    const { ok, status } = await api({ action: "create", booking, slot_ids: slot.ids });
+    const { ok, status } = await api({ action: "create", booking, persons: slot.persons });
     if (status === 409) {
       // Someone booked that time first — refresh the list and ask them to repick.
       errEl.textContent = "Sorry, that time was just booked by someone else. Please pick another.";
@@ -584,57 +585,60 @@ function showAdminPanel(bookings) {
   dateInput.min = new Date().toISOString().split("T")[0];
 
   renderBookings(bookings);
-  loadAdminSlots();
+  loadAdminRanges();
 }
 
 /* ---- Availability management (owner) ---- */
-async function loadAdminSlots() {
-  const { ok, data } = await api({ action: "list_slots", password: adminPassword });
-  if (ok) renderAdminSlots(data.slots || []);
+async function loadAdminRanges() {
+  const { ok, data } = await api({ action: "list_ranges", password: adminPassword });
+  if (ok) renderAdminRanges(data.ranges || []);
 }
 
-function renderAdminSlots(list) {
+function renderAdminRanges(list) {
   const box = document.getElementById("slotList");
-  if (!list.length) { box.innerHTML = '<p class="sub" style="margin:0">No times added yet.</p>'; return; }
+  if (!list.length) { box.innerHTML = '<p class="sub" style="margin:0">No free times added yet.</p>'; return; }
 
   // Group by date so the list is easy to scan.
   const byDay = {};
-  list.forEach(s => { (byDay[s.slot_date] = byDay[s.slot_date] || []).push(s); });
+  list.forEach(r => { (byDay[r.avail_date] = byDay[r.avail_date] || []).push(r); });
 
   box.innerHTML = Object.keys(byDay).sort().map(date => `
     <div class="slot-day">${formatDate(date)}</div>
-    ${byDay[date].map(s => `
+    ${byDay[date].map(r => `
       <div class="slot-row">
-        <span>${s.slot_time} · ${esc(s.person)}${s.booked ? ' · <span class="tag-done">Booked</span>' : ''}</span>
-        ${s.booked ? '' : `<button class="slot-del" onclick="deleteSlot('${s.id}')">Remove</button>`}
+        <span>${r.start_time}–${r.end_time} · ${esc(r.person)}</span>
+        <button class="slot-del" onclick="deleteRange('${r.id}')">Remove</button>
       </div>`).join("")}
   `).join("");
 }
 
-async function addSlot() {
+async function addRange() {
   const person = document.getElementById("slotPerson").value;
-  const slot_date = document.getElementById("slotDate").value;
-  const slot_time = document.getElementById("slotTime").value;
+  const avail_date = document.getElementById("slotDate").value;
+  const start_time = document.getElementById("slotStart").value;
+  const end_time = document.getElementById("slotEnd").value;
   const msg = document.getElementById("slotMsg");
   const btn = document.getElementById("addSlotBtn");
 
-  if (!slot_date || !slot_time) { msg.textContent = "Pick a date and time first."; return; }
+  if (!avail_date || !start_time || !end_time) { msg.textContent = "Pick a date, a 'from' time and a 'until' time."; return; }
+  if (end_time <= start_time) { msg.textContent = "'Free until' must be after 'free from'."; return; }
 
   btn.disabled = true; btn.textContent = "Adding…";
-  const { ok } = await api({ action: "add_slot", password: adminPassword, slot: { person, slot_date, slot_time } });
-  btn.disabled = false; btn.textContent = "Add time";
+  const { ok } = await api({ action: "add_range", password: adminPassword, range: { person, avail_date, start_time, end_time } });
+  btn.disabled = false; btn.textContent = "Add availability";
   if (ok) {
-    msg.textContent = `Added ${person} · ${formatDate(slot_date)} at ${slot_time}.`;
-    document.getElementById("slotTime").value = "";
-    loadAdminSlots();
+    msg.textContent = `Added ${person} · ${formatDate(avail_date)}, ${start_time}–${end_time}.`;
+    document.getElementById("slotStart").value = "";
+    document.getElementById("slotEnd").value = "";
+    loadAdminRanges();
   } else {
-    msg.textContent = "Couldn't add that time — please try again.";
+    msg.textContent = "Couldn't add that — please try again.";
   }
 }
 
-async function deleteSlot(id) {
-  const { ok } = await api({ action: "delete_slot", password: adminPassword, id });
-  if (ok) loadAdminSlots();
+async function deleteRange(id) {
+  const { ok } = await api({ action: "delete_range", password: adminPassword, id });
+  if (ok) loadAdminRanges();
 }
 
 // Re-fetch the latest bookings from the server.
