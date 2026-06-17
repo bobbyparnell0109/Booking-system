@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>BB Details — Mobile Car Valeting</title>
-<meta name="description" content="BB Details — professional mobile car valeting. We come to you. Exterior wash, interior clean and full valet." />
+<title>BB Car Detailing — Cleaner. Shinier. Better.</title>
+<meta name="description" content="BB Car Detailing — professional mobile car detailing. We come to you. Exterior wash, interior clean and full valet." />
 
 <!-- ===================================================================
      BB DETAILS — single-file car valeting website (LIVE / shared version)
@@ -39,8 +39,8 @@
    To add a service: copy a line in `services` and give it a name + price.
    ===================================================================== */
 const CONFIG = {
-  businessName: "BB Details",
-  tagline: "Showroom-fresh, without leaving your driveway. Mobile valeting that comes to you.",
+  businessName: "BB Car Detailing",
+  tagline: "Cleaner. Shinier. Better. Mobile car detailing that comes to you — without leaving your driveway.",
 
   // Services shown on the page AND in the booking dropdown.
   services: [
@@ -55,7 +55,20 @@ const CONFIG = {
     { name: "Bobby",   phone: "07903 512940" },
     { name: "Bramley", phone: "07434 651512" }
   ],
-  facebookUrl: "https://www.facebook.com/",    // EDIT: your Facebook page
+  facebookUrl: "https://www.facebook.com/share/184bo5SHpP/?mibextid=wwXIfr",    // EDIT: your Facebook page
+
+  // Your logo. Upload the image file to the repo (same place as this file) and
+  // put its name here, e.g. "logo.png". Leave as "" to show the "BB" text box.
+  logoUrl: "logo.jpg",
+
+  // Before / after photos shown in the swipeable gallery on the home page.
+  // Add one line per pair. Upload each image to the repo and use its name here.
+  // Example:
+  //   { before: "before1.jpg", after: "after1.jpg" },
+  //   { before: "before2.jpg", after: "after2.jpg" },
+  gallery: [
+    // (empty for now — placeholders show until you add pairs above)
+  ],
 
   // The online backend this site talks to (your Supabase project).
   // You normally never need to touch this.
@@ -101,17 +114,21 @@ header.site {
 .nav { display: flex; align-items: center; justify-content: space-between; height: 60px; }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: 0.2px; }
 .logo {
-  width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center;
+  width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; overflow: hidden;
   background: linear-gradient(145deg, #2a2a2e, #131315); border: 1px solid var(--border);
   font-weight: 800; font-size: 15px; color: var(--text);
 }
+.logo.has-img { width: auto; height: 40px; background: none; border: none; border-radius: 0; }
+.logo img { height: 100%; width: auto; object-fit: contain; }
 .nav a.cta {
   background: var(--accent); color: var(--accent-ink); text-decoration: none;
   font-weight: 600; font-size: 14px; padding: 9px 16px; border-radius: 999px;
 }
 
 .hero { padding: 48px 0 36px; text-align: center; }
+.hero .hero-logo { width: 100%; max-width: 360px; height: auto; margin: 0 auto 18px; }
 .hero h1 { font-size: 38px; line-height: 1.05; margin: 0 0 14px; letter-spacing: -0.5px; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .hero .tag { color: var(--muted); font-size: 17px; margin: 0 auto 26px; max-width: 440px; }
 .hero .btn-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 
@@ -124,14 +141,27 @@ header.site {
 .btn-primary { background: var(--accent); color: var(--accent-ink); }
 .btn-ghost { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
 
-.gallery { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 34px; }
+/* Swipeable before/after gallery */
+.carousel {
+  margin-top: 34px; overflow-x: auto; scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch; scrollbar-width: none; border-radius: var(--radius);
+}
+.carousel::-webkit-scrollbar { display: none; }
+.carousel-track { display: flex; }
+.slide { flex: 0 0 100%; scroll-snap-align: center; }
+.slide .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.dots { display: flex; gap: 8px; justify-content: center; margin-top: 14px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); border: none; padding: 0; cursor: pointer; transition: background .2s ease; }
+.dot.active { background: var(--accent); }
+
 .photo {
-  position: relative; aspect-ratio: 4 / 3; border-radius: var(--radius); border: 1px solid var(--border);
+  position: relative; aspect-ratio: 4 / 3; border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden;
   background: repeating-linear-gradient(45deg, #161618 0 12px, #1b1b1f 12px 24px);
   display: grid; place-items: center; color: var(--muted); font-size: 13px; text-align: center; padding: 10px;
 }
+.photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .photo .badge {
-  position: absolute; top: 10px; left: 10px; background: var(--bg); border: 1px solid var(--border);
+  position: absolute; z-index: 2; top: 10px; left: 10px; background: var(--bg); border: 1px solid var(--border);
   font-size: 11px; text-transform: uppercase; letter-spacing: 1px; padding: 4px 10px; border-radius: 999px; color: var(--text);
 }
 
@@ -208,9 +238,9 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
   <header class="site">
     <div class="wrap nav">
       <div class="brand">
-        <!-- Logo placeholder: swap this <div> for <img src="logo.png"> -->
-        <div class="logo">BB</div>
-        <span id="brandName">BB Details</span>
+        <!-- Logo: set CONFIG.logoUrl to swap this for your image automatically. -->
+        <div class="logo" id="logoBox">BB</div>
+        <span id="brandName">BB Car Detailing</span>
       </div>
       <a class="cta" href="#book">Book now</a>
     </div>
@@ -218,17 +248,16 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
 
   <div class="wrap">
     <section class="hero" style="border-top:none">
-      <h1 id="heroName">BB Details</h1>
+      <img id="heroLogo" class="hero-logo hidden" alt="" />
+      <h1 id="heroName">BB Car Detailing</h1>
       <p class="tag" id="heroTag"></p>
       <div class="btn-row">
         <a class="btn btn-primary" href="#book">Book a valet</a>
         <a class="btn btn-ghost" href="#services">See prices</a>
       </div>
-      <!-- Before / after photo placeholders. Replace each .photo with an <img>. -->
-      <div class="gallery">
-        <div class="photo"><span class="badge">Before</span>Add your<br>"before" photo</div>
-        <div class="photo"><span class="badge">After</span>Add your<br>"after" photo</div>
-      </div>
+      <!-- Swipeable before/after gallery — built from CONFIG.gallery in JS. -->
+      <div class="carousel" id="gallery"><div class="carousel-track" id="galleryTrack"></div></div>
+      <div class="dots" id="galleryDots"></div>
     </section>
 
     <section id="services">
@@ -300,7 +329,7 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
         <a id="fbLink" href="#" target="_blank" rel="noopener">Facebook</a>
         <!-- "Call <name>" links are added here automatically from CONFIG.contacts -->
       </div>
-      <p>&copy; <span id="year"></span> BB Details · Mobile car valeting</p>
+      <p>&copy; <span id="year"></span> BB Car Detailing · Mobile car detailing</p>
       <p><a class="admin-link" href="#admin">Owner login</a></p>
     </div>
   </footer>
@@ -311,7 +340,7 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
 <div id="admin" class="hidden">
   <header class="site">
     <div class="wrap nav">
-      <div class="brand"><div class="logo">BB</div><span>Admin</span></div>
+      <div class="brand"><div class="logo" id="adminLogoBox">BB</div><span>Admin</span></div>
       <a class="cta" href="#">View site</a>
     </div>
   </header>
@@ -402,7 +431,7 @@ function buildPage() {
   document.getElementById("brandName").textContent = CONFIG.businessName;
   document.getElementById("heroName").textContent  = CONFIG.businessName;
   document.getElementById("heroTag").textContent   = CONFIG.tagline;
-  document.title = CONFIG.businessName + " — Mobile Car Valeting";
+  document.title = CONFIG.businessName + " — Cleaner. Shinier. Better.";
 
   document.getElementById("serviceList").innerHTML = CONFIG.services.map(s => `
     <div class="service">
@@ -420,6 +449,27 @@ function buildPage() {
 
   document.getElementById("fbLink").href = CONFIG.facebookUrl;
 
+  // Logo: if a logo image is set, swap the "BB" boxes for it (header + admin),
+  // feature it large in the hero, and hide the now-redundant brand/hero text.
+  if (CONFIG.logoUrl) {
+    const img = `<img src="${esc(CONFIG.logoUrl)}" alt="${esc(CONFIG.businessName)} logo">`;
+    ["logoBox", "adminLogoBox"].forEach(id => {
+      const box = document.getElementById(id);
+      if (box) { box.innerHTML = img; box.classList.add("has-img"); }
+    });
+    // The wordmark logo already says the name, so hide the header text label.
+    document.getElementById("brandName").classList.add("hidden");
+    // Feature the logo at the top of the hero; keep the H1 text for SEO/readers.
+    const heroLogo = document.getElementById("heroLogo");
+    heroLogo.src = CONFIG.logoUrl;
+    heroLogo.alt = CONFIG.businessName;
+    heroLogo.classList.remove("hidden");
+    document.getElementById("heroName").classList.add("visually-hidden");
+  }
+
+  // Build the before/after gallery.
+  renderGallery();
+
   // Add a tappable "Call <name>: <number>" link for each contact.
   const footerLinks = document.getElementById("footerLinks");
   CONFIG.contacts.forEach(c => {
@@ -434,6 +484,47 @@ function buildPage() {
   // Fill the booking dropdown with the owners' open times.
   loadSlots();
 }
+
+/* ---- Before/after gallery (swipeable carousel) ---- */
+function renderGallery() {
+  const track = document.getElementById("galleryTrack");
+  const dots  = document.getElementById("galleryDots");
+  const pairs = (CONFIG.gallery || []).filter(p => p && (p.before || p.after));
+
+  // No real photos yet → keep the friendly placeholder pair.
+  if (!pairs.length) {
+    track.innerHTML = `
+      <div class="slide"><div class="pair">
+        <div class="photo"><span class="badge">Before</span>Add your<br>"before" photo</div>
+        <div class="photo"><span class="badge">After</span>Add your<br>"after" photo</div>
+      </div></div>`;
+    dots.innerHTML = "";
+    return;
+  }
+
+  track.innerHTML = pairs.map(p => `
+    <div class="slide"><div class="pair">
+      <div class="photo"><span class="badge">Before</span>${p.before ? `<img src="${esc(p.before)}" alt="Before valet" loading="lazy">` : 'Before photo'}</div>
+      <div class="photo"><span class="badge">After</span>${p.after ? `<img src="${esc(p.after)}" alt="After valet" loading="lazy">` : 'After photo'}</div>
+    </div></div>`).join("");
+
+  // Dots only make sense when there's more than one pair to swipe between.
+  dots.innerHTML = pairs.length > 1
+    ? pairs.map((_, i) => `<button class="dot ${i === 0 ? "active" : ""}" aria-label="Go to photo ${i + 1}" onclick="goToSlide(${i})"></button>`).join("")
+    : "";
+}
+
+function goToSlide(i) {
+  const car = document.getElementById("gallery");
+  car.scrollTo({ left: i * car.clientWidth, behavior: "smooth" });
+}
+
+// Keep the active dot in sync as the customer swipes.
+document.getElementById("gallery").addEventListener("scroll", () => {
+  const car = document.getElementById("gallery");
+  const idx = Math.round(car.scrollLeft / car.clientWidth);
+  document.querySelectorAll("#galleryDots .dot").forEach((d, i) => d.classList.toggle("active", i === idx));
+});
 
 /* ---- Build the customer's "Available time" dropdown ----
    Open slots are grouped by date+time. If more than one person is free at
