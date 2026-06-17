@@ -8,9 +8,16 @@
 
 ## 1. What this project is
 
-A single-page **mobile car valeting website** for **BB Details**.
-Owners: **Bobby** and **Bramley**. Dark theme (blacks/greys), mobile-first
-(customers arrive from Facebook/Instagram links).
+A single-page **mobile car detailing website** for **BB Car Detailing**
+(tagline **"Cleaner. Shinier. Better."**). Owners: **Bobby** and **Bramley**.
+Dark theme (blacks/greys), mobile-first (customers arrive from
+Facebook/Instagram links). The silver "BB Car Detailing" logo lives in the repo
+as `logo.jpg`.
+
+> **Naming note:** the business was originally drafted as "BB Details"; it was
+> renamed to **BB Car Detailing** to match the logo. You may still see the old
+> name in old git history, but the live site and all current text use
+> "BB Car Detailing".
 
 The entire website is **one self-contained file, `index.html`** (HTML + CSS +
 JavaScript, no build step). Bookings and availability are stored online in
@@ -49,9 +56,17 @@ Claude **cannot push to it directly**. The established workflow is:
    often shows the old version — this has confused the user before; reassure
    them it's only their cached copy.
 
-**If a future session IS scoped to Booking-system**, you can push `index.html`
-directly with the GitHub tools and skip the manual upload — much better.
-Consider asking the user to add Booking-system to the session.
+**If a session IS scoped to Booking-system** (as the 2026-06-17 session was),
+skip the manual upload entirely — work on the feature branch, commit, and push
+directly. Uploaded images (logo/photos) can be copied straight from the
+session's upload folder into the repo and committed; the user does **not** need
+to upload them via Safari in that case.
+
+**Going live (IMPORTANT):** GitHub Pages serves from the **`main`** branch, so
+changes on a feature branch are **not live** until merged into `main`. With the
+GitHub tools: open a PR (`head` = feature branch, `base` = main) and merge it
+(squash). Only do this when the user says to go live. After merging, give the
+user the live URL with a **cache-buster** (`?v=2`, `?v=3`, …).
 
 Backend changes (Supabase) are done by Claude directly via the Supabase MCP
 tools — no user action needed.
@@ -308,12 +323,22 @@ Deno.serve(async (req: Request) => {
 ## 8. What the owner can edit in `index.html`
 
 Everything editable is near the top — search the file for **`EDIT`**:
-- `businessName`, `tagline`
+- `businessName` (**"BB Car Detailing"**), `tagline`
+  (**"Cleaner. Shinier. Better. …"**).
 - `services[]` — `{id, label, price, blurb}`. Currently:
   Exterior Wash £25, Interior Only £25, Full Valet £40.
 - `contacts[]` — currently **Bobby 07903 512940**, **Bramley 07434 651512**
   (each becomes a tappable "Call <name>" link in the footer).
-- `facebookUrl` — currently the placeholder `https://www.facebook.com/`.
+- `facebookUrl` — set to the real page
+  (`https://www.facebook.com/share/184bo5SHpP/?mibextid=wwXIfr`).
+- `logoUrl` — `"logo.jpg"`. Set to `""` to fall back to the "BB" text box.
+  When set, the logo shows in the header + admin bar and is featured large in
+  the hero (the H1 text is kept but visually hidden for SEO/screen readers).
+- `gallery` — array of before/after pairs, e.g.
+  `[{ before: "before1.jpg", after: "after1.jpg" }, …]`. Rendered as a
+  **swipeable carousel** in the hero (dots appear when there's >1 pair). Empty
+  array → friendly placeholders. Each filename must be an image uploaded/committed
+  to the repo root.
 - `apiUrl` — the Edge Function URL (do not change).
 - Colour theme — the `:root` CSS variables.
 
@@ -322,22 +347,23 @@ Everything editable is near the top — search the file for **`EDIT`**:
 ## 9. Status
 
 **Done:**
-- Landing page (name, logo placeholder, tagline, before/after photo placeholders)
+- Landing page (BB Car Detailing branding, logo, tagline)
+- **Logo** wired in (`logo.jpg`) — header, admin bar, and featured large in hero
+- **Facebook link** set to the real page
+- **Swipeable before/after carousel** built (config-driven via `CONFIG.gallery`)
 - Services & pricing
 - Booking form → confirmation, saved to shared Supabase backend
 - Password-protected owner page: bookings list (sorted by date, complete/delete)
 - Two named contact numbers in footer
 - Availability system: free-time ranges → 30-min start times, 2½-hour overlap
   blocking, per-person + "together"
+- Rebrand + logo + Facebook link merged to `main` and **live** (2026-06-17,
+  squash-merged via PR #1)
 
 **TODO (waiting on the user to provide assets):**
-1. **Facebook link** — set `CONFIG.facebookUrl` to the real page URL.
-2. **Logo** — replace the `<div class="logo">BB</div>` (appears twice: header
-   + admin header) with `<img src="logo.png" …>`; the image file must also be
-   uploaded to the Booking-system repo and referenced relatively.
-3. **Before/after photos** — replace the two `<div class="photo">…</div>`
-   placeholders in the hero `.gallery` with `<img>` tags; upload the image
-   files to the repo too.
+1. **Before/after photos** — the user will send images; copy them into the repo
+   root and add a `{ before, after }` line per pair to `CONFIG.gallery`. They'll
+   then appear in the hero carousel automatically. Merge to `main` to go live.
 
 **Good to know:**
 - When a booking is **deleted** in the owner page, its time **reopens
