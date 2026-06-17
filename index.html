@@ -291,13 +291,21 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
             <option value="" disabled selected>Choose a service…</option>
           </select>
         </div>
-        <div class="field">
-          <label>Available time <span class="req">*</span></label>
-          <select name="slot" id="slotSelect" required>
-            <option value="" disabled selected>Loading available times…</option>
-          </select>
-          <p id="slotHint" class="form-hint"></p>
+        <div class="row2">
+          <div class="field" style="margin-bottom:0">
+            <label>Date <span class="req">*</span></label>
+            <select name="date" id="dateSelect" required>
+              <option value="" disabled selected>Loading dates…</option>
+            </select>
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label>Time <span class="req">*</span></label>
+            <select name="slot" id="slotSelect" required disabled>
+              <option value="" disabled selected>Choose a date first…</option>
+            </select>
+          </div>
         </div>
+        <p id="slotHint" class="form-hint"></p>
         <div class="field">
           <label>Car make &amp; model <span class="req">*</span></label>
           <input type="text" name="car" placeholder="e.g. Ford Fiesta" required />
@@ -520,39 +528,70 @@ document.getElementById("gallery").addEventListener("scroll", () => {
   document.querySelectorAll("#galleryDots .dot").forEach((d, i) => d.classList.toggle("active", i === idx));
 });
 
-/* ---- Build the customer's "Available time" dropdown ----
-   Open slots are grouped by date+time. If more than one person is free at
-   the same time, they're combined into one "together" option. */
-let slotOptions = [];  // each: { date, time, detailer, ids[], label }
+/* ---- Build the customer's "Date" then "Time" dropdowns ----
+   Open slots are grouped by date, then by time within each date. If more than
+   one person is free at the same time, they're combined into one "together"
+   option. Picking a date fills the time dropdown with that day's times. */
+let slotsByDate = {};  // date -> [ { time, detailer, persons[], label } ]
 async function loadSlots() {
-  const sel = document.getElementById("slotSelect");
+  const dateSel = document.getElementById("dateSelect");
+  const timeSel = document.getElementById("slotSelect");
   const hint = document.getElementById("slotHint");
+
+  const resetTime = (msg) => {
+    timeSel.innerHTML = `<option value="" disabled selected>${msg}</option>`;
+    timeSel.disabled = true;
+  };
+
   const { ok, data } = await api({ action: "slots" });
   if (!ok) {
-    sel.innerHTML = '<option value="" disabled selected>Couldn\'t load times — please call us</option>';
+    dateSel.innerHTML = '<option value="" disabled selected>Couldn\'t load dates — please call us</option>';
+    resetTime("—");
     return;
   }
+
+  // Group slots by "date|time" so people free at the same time merge to "together".
   const groups = {};
   (data.slots || []).forEach(s => {
     const key = s.slot_date + "|" + s.slot_time;
     (groups[key] = groups[key] || []).push(s);
   });
-  slotOptions = Object.keys(groups).sort().map(key => {
+  slotsByDate = {};
+  Object.keys(groups).sort().forEach(key => {
     const [date, time] = key.split("|");
     const people = groups[key].map(s => s.person);
     const detailer = people.length > 1 ? people.join(" & ") + " (together)" : people[0];
-    return { date, time, detailer, persons: people, label: `${formatDate(date)}, ${time} — with ${detailer}` };
+    (slotsByDate[date] = slotsByDate[date] || []).push({ time, detailer, persons: people, label: `${time} — with ${detailer}` });
   });
 
-  if (!slotOptions.length) {
-    sel.innerHTML = '<option value="" disabled selected>No times available right now</option>';
-    hint.textContent = "We've no free slots listed at the moment — give us a call and we'll sort something out.";
+  const dates = Object.keys(slotsByDate).sort();
+  if (!dates.length) {
+    dateSel.innerHTML = '<option value="" disabled selected>No dates available right now</option>';
+    resetTime("—");
+    hint.textContent = "We've no free slots at the moment — give us a call and we'll sort something out.";
     return;
   }
-  sel.innerHTML = '<option value="" disabled selected>Choose an available time…</option>' +
-    slotOptions.map((o, i) => `<option value="${i}">${esc(o.label)}</option>`).join("");
+  dateSel.innerHTML = '<option value="" disabled selected>Choose a date…</option>' +
+    dates.map(d => `<option value="${d}">${esc(formatDate(d))}</option>`).join("");
+  resetTime("Choose a date first…");
   hint.textContent = "";
 }
+
+// When a date is picked, fill the time dropdown with that day's available times.
+function onDateChange() {
+  const date = document.getElementById("dateSelect").value;
+  const timeSel = document.getElementById("slotSelect");
+  const times = slotsByDate[date] || [];
+  if (!times.length) {
+    timeSel.innerHTML = '<option value="" disabled selected>No times that day</option>';
+    timeSel.disabled = true;
+    return;
+  }
+  timeSel.innerHTML = '<option value="" disabled selected>Choose a time…</option>' +
+    times.map((o, i) => `<option value="${i}">${esc(o.label)}</option>`).join("");
+  timeSel.disabled = false;
+}
+document.getElementById("dateSelect").addEventListener("change", onDateChange);
 
 /* =====================================================================
    2. BOOKING FORM SUBMIT  (sends to the online backend)
@@ -563,13 +602,13 @@ document.getElementById("bookingForm").addEventListener("submit", async function
 
   const data = Object.fromEntries(new FormData(this).entries());
   const svc = serviceById(data.service);
-  const slot = slotOptions[Number(data.slot)];
+  const slot = (slotsByDate[data.date] || [])[Number(data.slot)];
   const btn = document.getElementById("submitBtn");
   const errEl = document.getElementById("formError");
   errEl.classList.add("hidden");
 
   if (!slot) {
-    errEl.textContent = "Please choose an available time.";
+    errEl.textContent = "Please choose an available date and time.";
     errEl.classList.remove("hidden");
     return;
   }
@@ -579,7 +618,7 @@ document.getElementById("bookingForm").addEventListener("submit", async function
     name: data.name.trim(), phone: data.phone.trim(), email: data.email.trim(),
     service_id: data.service, service_label: svc ? svc.label : data.service,
     price: svc ? svc.price : null,
-    booking_date: slot.date, booking_time: slot.time, detailer: slot.detailer,
+    booking_date: data.date, booking_time: slot.time, detailer: slot.detailer,
     car: data.car.trim(), address: data.address.trim(), notes: data.notes.trim()
   };
 
