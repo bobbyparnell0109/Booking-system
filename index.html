@@ -785,7 +785,7 @@ function renderTimeOffCalendar() {
   if (!box) return;
   const todayIso = new Date().toISOString().split("T")[0];
   const now = new Date();
-  const MONTHS_AHEAD = 6;  // how many months the scrollable calendar shows
+  const MONTHS_AHEAD = 7;  // current month + 6 months ahead; rolls forward each month
   let html = "";
   for (let k = 0; k < MONTHS_AHEAD; k++) {
     const base = now.getMonth() + k;
