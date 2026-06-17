@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>BB Details — Mobile Car Valeting</title>
-<meta name="description" content="BB Details — professional mobile car valeting. We come to you. Exterior wash, interior clean and full valet." />
+<title>BB Car Detailing — Cleaner. Shinier. Better.</title>
+<meta name="description" content="BB Car Detailing — professional mobile car detailing. We come to you. Exterior wash, interior clean and full valet." />
 
 <!-- ===================================================================
      BB DETAILS — single-file car valeting website (LIVE / shared version)
@@ -39,8 +39,8 @@
    To add a service: copy a line in `services` and give it a name + price.
    ===================================================================== */
 const CONFIG = {
-  businessName: "BB Details",
-  tagline: "Showroom-fresh, without leaving your driveway. Mobile valeting that comes to you.",
+  businessName: "BB Car Detailing",
+  tagline: "Cleaner. Shinier. Better. Mobile car detailing that comes to you — without leaving your driveway.",
 
   // Services shown on the page AND in the booking dropdown.
   services: [
@@ -55,11 +55,11 @@ const CONFIG = {
     { name: "Bobby",   phone: "07903 512940" },
     { name: "Bramley", phone: "07434 651512" }
   ],
-  facebookUrl: "https://www.facebook.com/",    // EDIT: your Facebook page
+  facebookUrl: "https://www.facebook.com/share/184bo5SHpP/?mibextid=wwXIfr",    // EDIT: your Facebook page
 
   // Your logo. Upload the image file to the repo (same place as this file) and
   // put its name here, e.g. "logo.png". Leave as "" to show the "BB" text box.
-  logoUrl: "",
+  logoUrl: "logo.jpg",
 
   // Before / after photos shown in the swipeable gallery on the home page.
   // Add one line per pair. Upload each image to the repo and use its name here.
@@ -118,15 +118,17 @@ header.site {
   background: linear-gradient(145deg, #2a2a2e, #131315); border: 1px solid var(--border);
   font-weight: 800; font-size: 15px; color: var(--text);
 }
-.logo.has-img { background: none; border: none; }
-.logo img { width: 100%; height: 100%; object-fit: contain; }
+.logo.has-img { width: auto; height: 40px; background: none; border: none; border-radius: 0; }
+.logo img { height: 100%; width: auto; object-fit: contain; }
 .nav a.cta {
   background: var(--accent); color: var(--accent-ink); text-decoration: none;
   font-weight: 600; font-size: 14px; padding: 9px 16px; border-radius: 999px;
 }
 
 .hero { padding: 48px 0 36px; text-align: center; }
+.hero .hero-logo { width: 100%; max-width: 360px; height: auto; margin: 0 auto 18px; }
 .hero h1 { font-size: 38px; line-height: 1.05; margin: 0 0 14px; letter-spacing: -0.5px; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .hero .tag { color: var(--muted); font-size: 17px; margin: 0 auto 26px; max-width: 440px; }
 .hero .btn-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 
@@ -238,7 +240,7 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
       <div class="brand">
         <!-- Logo: set CONFIG.logoUrl to swap this for your image automatically. -->
         <div class="logo" id="logoBox">BB</div>
-        <span id="brandName">BB Details</span>
+        <span id="brandName">BB Car Detailing</span>
       </div>
       <a class="cta" href="#book">Book now</a>
     </div>
@@ -246,7 +248,8 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
 
   <div class="wrap">
     <section class="hero" style="border-top:none">
-      <h1 id="heroName">BB Details</h1>
+      <img id="heroLogo" class="hero-logo hidden" alt="" />
+      <h1 id="heroName">BB Car Detailing</h1>
       <p class="tag" id="heroTag"></p>
       <div class="btn-row">
         <a class="btn btn-primary" href="#book">Book a valet</a>
@@ -326,7 +329,7 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
         <a id="fbLink" href="#" target="_blank" rel="noopener">Facebook</a>
         <!-- "Call <name>" links are added here automatically from CONFIG.contacts -->
       </div>
-      <p>&copy; <span id="year"></span> BB Details · Mobile car valeting</p>
+      <p>&copy; <span id="year"></span> BB Car Detailing · Mobile car detailing</p>
       <p><a class="admin-link" href="#admin">Owner login</a></p>
     </div>
   </footer>
@@ -428,7 +431,7 @@ function buildPage() {
   document.getElementById("brandName").textContent = CONFIG.businessName;
   document.getElementById("heroName").textContent  = CONFIG.businessName;
   document.getElementById("heroTag").textContent   = CONFIG.tagline;
-  document.title = CONFIG.businessName + " — Mobile Car Valeting";
+  document.title = CONFIG.businessName + " — Cleaner. Shinier. Better.";
 
   document.getElementById("serviceList").innerHTML = CONFIG.services.map(s => `
     <div class="service">
@@ -446,13 +449,22 @@ function buildPage() {
 
   document.getElementById("fbLink").href = CONFIG.facebookUrl;
 
-  // Logo: if a logo image is set, swap the "BB" boxes for it (header + admin).
+  // Logo: if a logo image is set, swap the "BB" boxes for it (header + admin),
+  // feature it large in the hero, and hide the now-redundant brand/hero text.
   if (CONFIG.logoUrl) {
     const img = `<img src="${esc(CONFIG.logoUrl)}" alt="${esc(CONFIG.businessName)} logo">`;
     ["logoBox", "adminLogoBox"].forEach(id => {
       const box = document.getElementById(id);
       if (box) { box.innerHTML = img; box.classList.add("has-img"); }
     });
+    // The wordmark logo already says the name, so hide the header text label.
+    document.getElementById("brandName").classList.add("hidden");
+    // Feature the logo at the top of the hero; keep the H1 text for SEO/readers.
+    const heroLogo = document.getElementById("heroLogo");
+    heroLogo.src = CONFIG.logoUrl;
+    heroLogo.alt = CONFIG.businessName;
+    heroLogo.classList.remove("hidden");
+    document.getElementById("heroName").classList.add("visually-hidden");
   }
 
   // Build the before/after gallery.
