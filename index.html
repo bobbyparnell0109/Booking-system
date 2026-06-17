@@ -294,9 +294,7 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
         <div class="row2">
           <div class="field" style="margin-bottom:0">
             <label>Date <span class="req">*</span></label>
-            <select name="date" id="dateSelect" required>
-              <option value="" disabled selected>Loading dates…</option>
-            </select>
+            <input type="date" name="date" id="dateSelect" required />
           </div>
           <div class="field" style="margin-bottom:0">
             <label>Time <span class="req">*</span></label>
@@ -545,8 +543,9 @@ async function loadSlots() {
 
   const { ok, data } = await api({ action: "slots" });
   if (!ok) {
-    dateSel.innerHTML = '<option value="" disabled selected>Couldn\'t load dates — please call us</option>';
+    dateSel.value = ""; dateSel.disabled = true;
     resetTime("—");
+    hint.textContent = "Couldn't load availability — please call us.";
     return;
   }
 
@@ -564,32 +563,42 @@ async function loadSlots() {
     (slotsByDate[date] = slotsByDate[date] || []).push({ time, detailer, persons: people, label: `${time} — with ${detailer}` });
   });
 
+  // Constrain the calendar to the bookable window (first → last available day).
   const dates = Object.keys(slotsByDate).sort();
+  dateSel.value = "";
+  resetTime("Choose a date first…");
   if (!dates.length) {
-    dateSel.innerHTML = '<option value="" disabled selected>No dates available right now</option>';
-    resetTime("—");
+    dateSel.disabled = true;
     hint.textContent = "We've no free slots at the moment — give us a call and we'll sort something out.";
     return;
   }
-  dateSel.innerHTML = '<option value="" disabled selected>Choose a date…</option>' +
-    dates.map(d => `<option value="${d}">${esc(formatDate(d))}</option>`).join("");
-  resetTime("Choose a date first…");
-  hint.textContent = "";
+  dateSel.disabled = false;
+  dateSel.min = dates[0];
+  dateSel.max = dates[dates.length - 1];
+  hint.textContent = "Tap the calendar to pick a date, then choose a time.";
 }
 
-// When a date is picked, fill the time dropdown with that day's available times.
+// When a date is picked on the calendar, fill the time dropdown for that day.
 function onDateChange() {
   const date = document.getElementById("dateSelect").value;
   const timeSel = document.getElementById("slotSelect");
+  const hint = document.getElementById("slotHint");
+  if (!date) {
+    timeSel.innerHTML = '<option value="" disabled selected>Choose a date first…</option>';
+    timeSel.disabled = true;
+    return;
+  }
   const times = slotsByDate[date] || [];
   if (!times.length) {
     timeSel.innerHTML = '<option value="" disabled selected>No times that day</option>';
     timeSel.disabled = true;
+    hint.textContent = "Sorry, we're not available on that day — please pick another.";
     return;
   }
   timeSel.innerHTML = '<option value="" disabled selected>Choose a time…</option>' +
     times.map((o, i) => `<option value="${i}">${esc(o.label)}</option>`).join("");
   timeSel.disabled = false;
+  hint.textContent = "";
 }
 document.getElementById("dateSelect").addEventListener("change", onDateChange);
 
