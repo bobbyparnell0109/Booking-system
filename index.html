@@ -234,6 +234,29 @@ section .sub { color: var(--muted); margin: 0 0 22px; }
 }
 .hidden { display: none !important; }
 
+/* "Please read" terms popup */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.72);
+  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+  display: grid; place-items: center; padding: 20px; overflow-y: auto;
+}
+.modal {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  width: 100%; max-width: 460px; padding: 26px 24px; margin: auto;
+}
+.modal h2 {
+  margin: 0 0 14px; font-size: 22px; letter-spacing: 1px; text-transform: uppercase;
+}
+.modal p { margin: 0 0 14px; color: var(--muted); font-size: 15px; }
+.terms-list { margin: 0 0 22px; padding-left: 20px; }
+.terms-list li { margin-bottom: 12px; font-size: 14px; line-height: 1.5; }
+.terms-list strong { color: var(--text); }
+
+/* Agree-to-terms checkbox by the booking button */
+.terms-check label { display: flex; align-items: center; gap: 10px; color: var(--text); font-size: 14px; font-weight: 500; cursor: pointer; }
+.terms-check input[type="checkbox"] { width: 20px; height: 20px; flex: 0 0 auto; accent-color: var(--accent); }
+.terms-check a { color: var(--accent); text-decoration: underline; font-weight: 600; }
+
 footer.site { border-top: 1px solid var(--border); padding: 32px 0 40px; text-align: center; color: var(--muted); font-size: 14px; }
 footer.site a { color: var(--text); text-decoration: none; font-weight: 600; }
 footer.site .links { display: flex; gap: 22px; justify-content: center; margin-bottom: 14px; flex-wrap: wrap; }
@@ -258,6 +281,22 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
 </head>
 
 <body>
+
+<!-- ===================== TERMS POPUP ===================== -->
+<!-- Shown automatically when the site opens, and again if the customer taps
+     the "terms" link by the booking button. -->
+<div id="termsModal" class="modal-overlay hidden">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="termsTitle">
+    <h2 id="termsTitle">Please read</h2>
+    <p>Before we arrive, please make sure of a few things so we can give your car the best clean:</p>
+    <ul class="terms-list">
+      <li><strong>Water supply</strong> — while we detail, we'll need access to the house owner's water supply (an outside tap).</li>
+      <li><strong>Room to work</strong> — there must be enough room for us to detail properly on your driveway. If there isn't, we'll need to arrange a better spot with a water supply available to detail.</li>
+      <li><strong>Parking</strong> — there must be a suitable place for us to park somewhere near the house we're detailing at, which can include just up the curb.</li>
+    </ul>
+    <button class="btn btn-primary btn-full" onclick="acceptTerms()">I accept these terms</button>
+  </div>
+</div>
 
 <!-- ===================== PUBLIC SITE ===================== -->
 <div id="main">
@@ -337,6 +376,12 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
         <div class="field">
           <label>Notes (optional)</label>
           <textarea name="notes" placeholder="Anything we should know? Pet hair, parking, etc."></textarea>
+        </div>
+        <div class="field terms-check">
+          <label>
+            <input type="checkbox" name="terms" id="termsAgree" required />
+            <span>I agree to our <a href="#" onclick="showTerms(event)">terms</a></span>
+          </label>
         </div>
         <button type="submit" id="submitBtn" class="btn btn-primary btn-full">Request booking</button>
         <p id="formError" class="form-error hidden"></p>
@@ -1056,6 +1101,17 @@ function esc(str) {
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
+/* ---- "Please read" terms popup ---- */
+function showTerms(e) {
+  if (e) e.preventDefault();
+  document.getElementById("termsModal").classList.remove("hidden");
+  document.body.style.overflow = "hidden";  // stop the page behind scrolling
+}
+function acceptTerms() {
+  document.getElementById("termsModal").classList.add("hidden");
+  document.body.style.overflow = "";
+}
+
 /* =====================================================================
    5. TINY ROUTER — show admin when URL hash is #admin, else the site
    ===================================================================== */
@@ -1079,6 +1135,10 @@ window.addEventListener("hashchange", route);
 
 buildPage();
 route();
+
+// Show the "Please read" terms popup when the site first opens (not on the
+// owner page).
+if (location.hash !== "#admin") showTerms();
 </script>
 
 </body>
