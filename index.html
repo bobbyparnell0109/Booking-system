@@ -74,8 +74,8 @@ const CONFIG = {
 
   // Special offers banner (loyalty / referral). Leave empty [] to hide it.
   offers: [
-    { icon: "⭐", text: "Loyalty: every 5th valet is HALF PRICE." },
-    { icon: "👋", text: "Refer a friend — you both get £5 off your next valet." }
+    { icon: "⭐", text: "Loyalty: every 5th valet is HALF PRICE — we keep count for you." },
+    { icon: "👋", text: "Refer a friend: book and pop their name in \"Referred by\" — you both get £5 off." }
   ],
 
   // Frequently asked questions (tap to expand). Add/edit freely.
@@ -369,6 +369,8 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
 .booking .actions .done-btn { color: var(--ok); }
 .booking .actions .del-btn { color: var(--danger); }
 .tag-done { color: var(--ok); font-size: 12px; font-weight: 700; }
+.loyalty { display: inline-block; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); color: var(--muted); }
+.loyalty.milestone { background: var(--sale); border-color: var(--sale); color: #1a0e03; }
 
 @media (min-width: 620px) { .hero h1 { font-size: 46px; } }
 </style>
@@ -500,6 +502,10 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
         <div class="field">
           <label>Notes (optional)</label>
           <textarea name="notes" placeholder="Anything we should know? Pet hair, parking, etc."></textarea>
+        </div>
+        <div class="field">
+          <label>Referred by a friend? (optional)</label>
+          <input type="text" name="referred_by" placeholder="Their name — you both get £5 off" maxlength="80" />
         </div>
         <div class="field terms-check">
           <label>
@@ -1159,7 +1165,8 @@ document.getElementById("bookingForm").addEventListener("submit", async function
     service_id: data.service, service_label: label,
     price: eff ? eff.now : null,
     booking_date: data.date, booking_time: slot.time, detailer: slot.detailer,
-    car: data.car.trim(), address: data.address.trim(), notes: data.notes.trim()
+    car: data.car.trim(), address: data.address.trim(), notes: data.notes.trim(),
+    referred_by: (data.referred_by || "").trim() || null
   };
 
   btn.disabled = true; btn.textContent = "Sending…";
@@ -1425,16 +1432,34 @@ async function loadBookings() {
   if (ok) renderBookings(data.bookings || []);
 }
 
+const LOYALTY_EVERY = 5;  // every Nth valet is half price
+function phoneKey(p) { return String(p ?? "").replace(/\D/g, ""); }
+
 function renderBookings(list) {
   // Server already sorts by date+time, but sort again to be safe.
   list.sort((a, b) => (a.booking_date + a.booking_time).localeCompare(b.booking_date + b.booking_time));
+
+  // Loyalty: number each customer's valets in order (by phone). The current
+  // booking's number tells us if it's a half-price milestone (every 5th).
+  const seqCount = {}, seqById = {};
+  list.forEach(b => {
+    const k = phoneKey(b.phone);
+    seqCount[k] = (seqCount[k] || 0) + 1;
+    seqById[b.id] = seqCount[k];
+  });
 
   const pending = list.filter(b => !b.completed).length;
   document.getElementById("adminCount").textContent = list.length
     ? `${list.length} total · ${pending} pending`
     : "No bookings yet.";
 
-  document.getElementById("bookingsList").innerHTML = list.map(b => `
+  document.getElementById("bookingsList").innerHTML = list.map(b => {
+    const n = seqById[b.id];
+    const milestone = n % LOYALTY_EVERY === 0;
+    const loyalty = milestone
+      ? `<span class="loyalty milestone">★ Valet #${n} — HALF PRICE</span>`
+      : `<span class="loyalty">Valet #${n}</span>`;
+    return `
     <div class="booking ${b.completed ? "done" : ""}">
       <div class="top">
         <div>
@@ -1443,6 +1468,7 @@ function renderBookings(list) {
         </div>
         <span class="svc">${esc(b.service_label)}${b.price != null ? " · " + money(b.price) : ""}</span>
       </div>
+      <div style="margin:8px 0">${loyalty}</div>
       <dl>
         <dt>Name</dt><dd>${esc(b.name)}</dd>
         <dt>Phone</dt><dd><a href="tel:${esc(b.phone)}">${esc(b.phone)}</a></dd>
@@ -1450,6 +1476,7 @@ function renderBookings(list) {
         ${b.detailer ? `<dt>Detailer</dt><dd>${esc(b.detailer)}</dd>` : ""}
         <dt>Car</dt><dd>${esc(b.car)}</dd>
         <dt>Address</dt><dd>${esc(b.address)}</dd>
+        ${b.referred_by ? `<dt>Referred by</dt><dd>${esc(b.referred_by)} <span style="color:var(--sale)">· £5 off both</span></dd>` : ""}
         ${b.notes ? `<dt>Notes</dt><dd>${esc(b.notes)}</dd>` : ""}
       </dl>
       <div class="actions">
@@ -1458,7 +1485,8 @@ function renderBookings(list) {
         </button>
         <button class="del-btn" onclick="deleteBooking('${b.id}')">Delete</button>
       </div>
-    </div>`).join("");
+    </div>`;
+  }).join("");
 }
 
 async function toggleComplete(id, completed) {
