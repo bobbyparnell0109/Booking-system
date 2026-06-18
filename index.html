@@ -6,6 +6,21 @@
 <title>BB Car Detailing — Cleaner. Shinier. Better.</title>
 <meta name="description" content="BB Car Detailing — professional mobile car detailing. We come to you. Exterior wash, interior clean and full valet." />
 
+<!-- Link preview card (shown when the site is shared on Facebook / Instagram /
+     WhatsApp) + home-screen icon. -->
+<meta property="og:type" content="website" />
+<meta property="og:title" content="BB Car Detailing — Cleaner. Shinier. Better." />
+<meta property="og:description" content="Professional mobile car detailing — we come to you. Exterior wash, interior clean and full valet. Book online in minutes." />
+<meta property="og:image" content="https://bobbyparnell0109.github.io/Booking-system/logo.jpg" />
+<meta property="og:url" content="https://bobbyparnell0109.github.io/Booking-system/" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="BB Car Detailing — Cleaner. Shinier. Better." />
+<meta name="twitter:description" content="Professional mobile car detailing — we come to you. Book online in minutes." />
+<meta name="twitter:image" content="https://bobbyparnell0109.github.io/Booking-system/logo.jpg" />
+<meta name="theme-color" content="#0c0c0d" />
+<link rel="icon" href="logo.jpg" />
+<link rel="apple-touch-icon" href="logo.jpg" />
+
 <!-- ===================================================================
      BB DETAILS — single-file car valeting website (LIVE / shared version)
      -------------------------------------------------------------------
@@ -56,6 +71,19 @@ const CONFIG = {
     { name: "Bramley", phone: "07434 651512" }
   ],
   facebookUrl: "https://www.facebook.com/share/184bo5SHpP/?mibextid=wwXIfr",    // EDIT: your Facebook page
+
+  // WhatsApp number in INTERNATIONAL format (no spaces, no +, UK starts 44).
+  // e.g. 07903 512940  ->  drop the 0, add 44  ->  "447903512940".
+  // Leave as "" to hide the WhatsApp button.
+  whatsapp: "447903512940",
+
+  // Customer reviews shown on the home page. EDIT freely — add real ones as they
+  // come in. `stars` is 1–5. Keep `text` short and punchy.
+  reviews: [
+    { name: "Sarah M.",  stars: 5, text: "Came right to my driveway and my car looked brand new. Lovely lads, brilliant job!" },
+    { name: "Dan R.",    stars: 5, text: "Booked the full valet — spotless inside and out. Will be using them every month now." },
+    { name: "Leanne T.", stars: 5, text: "So easy to book and they turned up bang on time. Car's never looked better. Highly recommend." }
+  ],
 
   // Your logo. Upload the image file to the repo (same place as this file) and
   // put its name here, e.g. "logo.png". Leave as "" to show the "BB" text box.
@@ -180,6 +208,16 @@ section .sub { color: var(--muted); margin: 0 0 22px; }
 }
 .price-was { color: var(--muted); text-decoration: line-through; font-size: 15px; font-weight: 600; margin-right: 8px; }
 .price-now { color: var(--sale); }
+
+/* Customer reviews */
+.review { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 12px; }
+.review .stars { color: #f5c518; font-size: 15px; letter-spacing: 2px; margin-bottom: 8px; }
+.review .text { margin: 0 0 10px; font-size: 15px; }
+.review .who { margin: 0; color: var(--muted); font-size: 13px; font-weight: 600; }
+
+/* WhatsApp button (green, sits with the call links) */
+.btn-whatsapp { background: #25d366; color: #04130b; }
+.wa-svg { width: 18px; height: 18px; vertical-align: -3px; margin-right: 7px; fill: currentColor; }
 
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; }
 .field { margin-bottom: 16px; }
@@ -317,6 +355,7 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
       <div class="btn-row">
         <a class="btn btn-primary" href="#book">Book a valet</a>
         <a class="btn btn-ghost" href="#services">See prices</a>
+        <a class="btn btn-whatsapp hidden" id="waBtn" target="_blank" rel="noopener"></a>
       </div>
       <!-- Swipeable before/after gallery — built from CONFIG.gallery in JS. -->
       <div class="carousel" id="gallery"><div class="carousel-track" id="galleryTrack"></div></div>
@@ -327,6 +366,12 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
       <h2>Services &amp; pricing</h2>
       <p class="sub">Simple, honest pricing. We bring everything we need.</p>
       <div id="serviceList"></div>
+    </section>
+
+    <section id="reviews" class="hidden">
+      <h2>What our customers say</h2>
+      <p class="sub">Don't just take our word for it.</p>
+      <div id="reviewList"></div>
     </section>
 
     <section id="book">
@@ -551,6 +596,10 @@ function buildPage() {
 
   document.getElementById("fbLink").href = CONFIG.facebookUrl;
 
+  // Reviews + WhatsApp button.
+  renderReviews();
+  setupWhatsApp();
+
   // The sticky header and owner bar use clean text branding (the wide wordmark
   // logo looks cramped/clipped when shrunk into a small bar).
   const adminBrand = document.getElementById("adminBrandName");
@@ -629,6 +678,46 @@ async function loadPublicDiscounts() {
   (data.discounts || []).forEach(d => { discounts[d.service_id] = d.percent; });
   renderServices();
   renderServiceOptions();
+}
+
+/* ---- Customer reviews ---- */
+function renderReviews() {
+  const sec = document.getElementById("reviews");
+  const list = document.getElementById("reviewList");
+  const reviews = (CONFIG.reviews || []).filter(r => r && r.text);
+  if (!reviews.length) { sec.classList.add("hidden"); return; }
+  sec.classList.remove("hidden");
+  list.innerHTML = reviews.map(r => {
+    const n = Math.max(0, Math.min(5, Math.round(r.stars || 5)));
+    const stars = "★".repeat(n) + "☆".repeat(5 - n);
+    return `
+    <div class="review">
+      <div class="stars" aria-label="${n} out of 5 stars">${stars}</div>
+      <p class="text">${esc(r.text)}</p>
+      <p class="who">— ${esc(r.name || "Happy customer")}</p>
+    </div>`;
+  }).join("");
+}
+
+/* ---- WhatsApp button (hero + footer), built from CONFIG.whatsapp ---- */
+const WA_SVG = '<svg class="wa-svg" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 .5C7.4.5.5 7.4.5 16c0 2.8.7 5.5 2.1 7.9L.5 31.5l7.8-2c2.3 1.3 4.9 1.9 7.7 1.9 8.6 0 15.5-6.9 15.5-15.5S24.6.5 16 .5zm0 28.3c-2.5 0-4.9-.7-7-1.9l-.5-.3-4.6 1.2 1.2-4.5-.3-.5c-1.4-2.2-2.1-4.7-2.1-7.3C2.6 8.6 8.6 2.6 16 2.6S29.4 8.6 29.4 16 23.4 28.8 16 28.8zm8.2-9.9c-.4-.2-2.6-1.3-3-1.4-.4-.1-.7-.2-1 .2-.3.4-1.1 1.4-1.4 1.7-.3.3-.5.3-.9.1-.4-.2-1.9-.7-3.6-2.2-1.3-1.2-2.2-2.6-2.5-3-.3-.4 0-.6.2-.8.2-.2.4-.5.6-.7.2-.2.3-.4.4-.7.1-.3 0-.5 0-.7-.1-.2-1-2.4-1.4-3.3-.4-.9-.7-.7-1-.7h-.8c-.3 0-.7.1-1.1.5-.4.4-1.5 1.4-1.5 3.5s1.5 4.1 1.7 4.4c.2.3 3 4.6 7.3 6.4 1 .4 1.8.7 2.4.9 1 .3 1.9.3 2.6.2.8-.1 2.6-1.1 3-2.1.4-1 .4-1.9.3-2.1-.1-.2-.4-.3-.8-.5z"/></svg>';
+function setupWhatsApp() {
+  if (!CONFIG.whatsapp) return;
+  const url = `https://wa.me/${CONFIG.whatsapp}?text=` +
+    encodeURIComponent("Hi BB Car Detailing, I'd like to book a valet.");
+  const btn = document.getElementById("waBtn");
+  if (btn) {
+    btn.href = url;
+    btn.innerHTML = WA_SVG + "WhatsApp us";
+    btn.classList.remove("hidden");
+  }
+  const footerLinks = document.getElementById("footerLinks");
+  if (footerLinks) {
+    const a = document.createElement("a");
+    a.href = url; a.target = "_blank"; a.rel = "noopener";
+    a.textContent = "WhatsApp us";
+    footerLinks.appendChild(a);
+  }
 }
 
 /* ---- Before/after gallery (swipeable carousel) ---- */
