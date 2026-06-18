@@ -91,6 +91,7 @@ const CONFIG = {
   --accent-ink:#0c0c0d;
   --ok:        #3ecf8e;
   --danger:    #ff6b6b;
+  --sale:      #ff8a3d;
   --radius:    14px;
   --maxw:      560px;
 }
@@ -170,6 +171,15 @@ section .sub { color: var(--muted); margin: 0 0 22px; }
 .service .info h3 { margin: 0 0 4px; font-size: 17px; }
 .service .info p { margin: 0; color: var(--muted); font-size: 14px; }
 .service .price { font-size: 22px; font-weight: 800; white-space: nowrap; }
+/* On sale */
+.service.on-sale { border-color: var(--sale); }
+.sale-badge {
+  display: inline-block; vertical-align: middle; margin-left: 8px;
+  background: var(--sale); color: #1a0e03; font-size: 11px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .5px; padding: 3px 8px; border-radius: 999px;
+}
+.price-was { color: var(--muted); text-decoration: line-through; font-size: 15px; font-weight: 600; margin-right: 8px; }
+.price-now { color: var(--sale); }
 
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; }
 .field { margin-bottom: 16px; }
@@ -417,6 +427,27 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
         <div id="offList" style="margin-top:8px"></div>
       </div>
 
+      <!-- ===== Discounts / sales ===== -->
+      <div class="card" style="margin-bottom:18px">
+        <h3 style="margin-top:0">Discounts / sales</h3>
+        <p class="sub" style="margin-bottom:16px">Put a service on sale. Pick the service and how much off — the main page shows the old price crossed out, the new price, and a "% off" badge. Remove it any time to go back to full price.</p>
+        <div class="row2">
+          <div class="field" style="margin-bottom:12px">
+            <label>Service</label>
+            <select id="discService"></select>
+          </div>
+          <div class="field" style="margin-bottom:12px">
+            <label>Percent off (%)</label>
+            <input type="number" id="discPercent" min="1" max="95" inputmode="numeric" placeholder="e.g. 20" />
+          </div>
+        </div>
+        <button class="btn btn-primary btn-full" id="addDiscBtn" onclick="setDiscount()">Put on sale</button>
+        <p id="discMsg" class="form-hint"></p>
+
+        <h4 style="margin:18px 0 0; font-size:15px">Current sales</h4>
+        <div id="discList" style="margin-top:8px"></div>
+      </div>
+
       <!-- ===== Bookings ===== -->
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
         <h3 style="margin:0">Bookings</h3>
@@ -447,7 +478,19 @@ async function api(payload) {
 }
 
 function serviceById(id) { return CONFIG.services.find(s => s.id === id); }
-function money(n) { return "£" + n; }
+function money(n) {
+  const r = Math.round(Number(n) * 100) / 100;
+  return "£" + (Number.isInteger(r) ? r : r.toFixed(2));
+}
+
+/* Current sales, fetched from the backend: { service_id: percent_off }.
+   effectivePrice() turns a service into its before/after price + percent. */
+let discounts = {};
+function effectivePrice(s) {
+  const pct = discounts[s.id] || 0;
+  const now = pct ? Math.round(s.price * (100 - pct)) / 100 : s.price;
+  return { pct, was: s.price, now };
+}
 
 /* =====================================================================
    1. POPULATE THE PAGE FROM CONFIG
@@ -458,19 +501,8 @@ function buildPage() {
   document.getElementById("heroTag").textContent   = CONFIG.tagline;
   document.title = CONFIG.businessName + " — Cleaner. Shinier. Better.";
 
-  document.getElementById("serviceList").innerHTML = CONFIG.services.map(s => `
-    <div class="service">
-      <div class="info"><h3>${s.label}</h3><p>${s.blurb}</p></div>
-      <div class="price">${money(s.price)}</div>
-    </div>`).join("");
-
-  const sel = document.querySelector('select[name="service"]');
-  CONFIG.services.forEach(s => {
-    const opt = document.createElement("option");
-    opt.value = s.id;
-    opt.textContent = `${s.label} — ${money(s.price)}`;
-    sel.appendChild(opt);
-  });
+  renderServices();
+  renderServiceOptions();
 
   document.getElementById("fbLink").href = CONFIG.facebookUrl;
 
@@ -505,6 +537,53 @@ function buildPage() {
 
   // Fill the booking dropdown with the owners' open times.
   loadSlots();
+  // Pull any current sales and re-render prices with them.
+  loadPublicDiscounts();
+}
+
+/* ---- Services list + booking dropdown (re-rendered when sales change) ---- */
+function renderServices() {
+  document.getElementById("serviceList").innerHTML = CONFIG.services.map(s => {
+    const { pct, was, now } = effectivePrice(s);
+    const priceHtml = pct
+      ? `<span class="price-was">${money(was)}</span><span class="price-now">${money(now)}</span>`
+      : money(was);
+    return `
+    <div class="service ${pct ? "on-sale" : ""}">
+      <div class="info">
+        <h3>${s.label}${pct ? ` <span class="sale-badge">${pct}% off</span>` : ""}</h3>
+        <p>${s.blurb}</p>
+      </div>
+      <div class="price">${priceHtml}</div>
+    </div>`;
+  }).join("");
+}
+
+function renderServiceOptions() {
+  const sel = document.querySelector('select[name="service"]');
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="" disabled selected>Choose a service…</option>';
+  CONFIG.services.forEach(s => {
+    const { pct, now } = effectivePrice(s);
+    const opt = document.createElement("option");
+    opt.value = s.id;
+    opt.textContent = pct
+      ? `${s.label} — ${money(now)} (${pct}% off)`
+      : `${s.label} — ${money(s.price)}`;
+    sel.appendChild(opt);
+  });
+  if (current) sel.value = current;  // keep the customer's choice across a re-render
+}
+
+// Fetch current sales (public) and refresh the prices shown on the page.
+async function loadPublicDiscounts() {
+  const { ok, data } = await api({ action: "discounts" });
+  if (!ok) return;
+  discounts = {};
+  (data.discounts || []).forEach(d => { discounts[d.service_id] = d.percent; });
+  renderServices();
+  renderServiceOptions();
 }
 
 /* ---- Before/after gallery (swipeable carousel) ---- */
@@ -644,11 +723,14 @@ document.getElementById("bookingForm").addEventListener("submit", async function
     return;
   }
 
-  // Column names here must match the database / server function.
+  // Column names here must match the database / server function. If a service
+  // is on sale, record the discounted price and note the % off on the label.
+  const eff = svc ? effectivePrice(svc) : null;
+  const label = svc ? (eff.pct ? `${svc.label} (${eff.pct}% off)` : svc.label) : data.service;
   const booking = {
     name: data.name.trim(), phone: data.phone.trim(), email: data.email.trim(),
-    service_id: data.service, service_label: svc ? svc.label : data.service,
-    price: svc ? svc.price : null,
+    service_id: data.service, service_label: label,
+    price: eff ? eff.now : null,
     booking_date: data.date, booking_time: slot.time, detailer: slot.detailer,
     car: data.car.trim(), address: data.address.trim(), notes: data.notes.trim()
   };
@@ -741,8 +823,72 @@ function showAdminPanel(bookings) {
   document.getElementById("offStart").min = todayStr;
   document.getElementById("offEnd").min = todayStr;
 
+  // Fill the "Service" dropdown for the discounts panel.
+  const discSel = document.getElementById("discService");
+  if (discSel && !discSel.options.length) {
+    discSel.innerHTML = CONFIG.services
+      .map(s => `<option value="${esc(s.id)}">${esc(s.label)}</option>`).join("");
+  }
+
   renderBookings(bookings);
   loadTimeOff();
+  loadDiscountsAdmin();
+}
+
+/* ---- Discounts / sales management (owner) ---- */
+let discountList = [];  // [{ service_id, percent }]
+async function loadDiscountsAdmin() {
+  const { ok, data } = await api({ action: "discounts" });
+  if (ok) { discountList = data.discounts || []; renderDiscountAdmin(); }
+}
+
+function renderDiscountAdmin() {
+  const box = document.getElementById("discList");
+  if (!box) return;
+  if (!discountList.length) {
+    box.innerHTML = '<p class="sub" style="margin:0">No sales on right now — every service is at full price.</p>';
+    return;
+  }
+  box.innerHTML = discountList.map(d => {
+    const s = serviceById(d.service_id);
+    const label = s ? s.label : d.service_id;
+    const was = s ? money(s.price) : "";
+    const now = s ? money(Math.round(s.price * (100 - d.percent)) / 100) : "";
+    return `
+    <div class="slot-row">
+      <span>${esc(label)} · <strong>${d.percent}% off</strong>${s ? ` <span style="color:var(--muted)">(${was} → ${now})</span>` : ""}</span>
+      <button class="slot-del" onclick="removeDiscount('${esc(d.service_id)}')">Remove</button>
+    </div>`;
+  }).join("");
+}
+
+async function setDiscount() {
+  const service_id = document.getElementById("discService").value;
+  const percent = parseInt(document.getElementById("discPercent").value, 10);
+  const msg = document.getElementById("discMsg");
+  const btn = document.getElementById("addDiscBtn");
+
+  if (!service_id) { msg.textContent = "Pick a service."; return; }
+  if (!Number.isInteger(percent) || percent < 1 || percent > 95) {
+    msg.textContent = "Enter a percent between 1 and 95."; return;
+  }
+
+  btn.disabled = true; btn.textContent = "Saving…";
+  const { ok } = await api({ action: "set_discount", password: adminPassword, discount: { service_id, percent } });
+  btn.disabled = false; btn.textContent = "Put on sale";
+  if (ok) {
+    const s = serviceById(service_id);
+    msg.textContent = `${s ? s.label : service_id} is now ${percent}% off.`;
+    document.getElementById("discPercent").value = "";
+    loadDiscountsAdmin();
+  } else {
+    msg.textContent = "Couldn't save that — please try again.";
+  }
+}
+
+async function removeDiscount(service_id) {
+  const { ok } = await api({ action: "remove_discount", password: adminPassword, service_id });
+  if (ok) loadDiscountsAdmin();
 }
 
 /* ---- Time off management (owner) ----
