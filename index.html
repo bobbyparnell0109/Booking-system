@@ -84,7 +84,7 @@ const CONFIG = {
     { q: "What do you need from me?", a: "Access to an outside water tap, enough room on the driveway to work, and somewhere to park nearby (just up the curb is fine)." },
     { q: "Do I need to be home?", a: "Not necessarily — as long as we can reach your car, a water tap and have somewhere to park. Just let us know in the notes." },
     { q: "Do you do vans or bigger vehicles?", a: "Yes! Give us a call or WhatsApp and we'll sort a price for larger vehicles." },
-    { q: "How do I pay?", a: "We'll confirm payment details when we call to confirm your booking." }
+    { q: "How do I pay?", a: "We take cash or bank transfer." }
   ],
 
   // Contact numbers shown in the footer. Add, remove or rename people freely
@@ -1179,7 +1179,7 @@ document.getElementById("bookingForm").addEventListener("submit", async function
     confirm.classList.remove("hidden");
     document.getElementById("confirmText").textContent =
       `Thanks ${booking.name}! We've got your request for a ${booking.service_label} on ` +
-      `${formatDate(booking.booking_date)} at ${booking.booking_time} with ${booking.detailer}. We'll call ${booking.phone} to confirm.`;
+      `${formatDate(booking.booking_date)} at ${booking.booking_time} with ${booking.detailer}. We'll message you on WhatsApp (${booking.phone}) a few days before to confirm.`;
     confirm.scrollIntoView({ behavior: "smooth", block: "center" });
   } catch {
     errEl.textContent = "Sorry — something went wrong sending your booking. Please check your connection and try again, or call us.";
