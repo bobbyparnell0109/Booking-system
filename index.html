@@ -64,6 +64,37 @@ const CONFIG = {
     { id: "full",     label: "Full Valet",     price: 40, blurb: "The lot — inside and out. Our most popular booking." }
   ],
 
+  // Optional extras a customer can add to any booking (tick-boxes on the form).
+  // Each adds its price to the total. Add/remove/rename freely.
+  addons: [
+    { id: "pethair", label: "Pet hair removal", price: 10 },
+    { id: "wax",     label: "Wax & polish",     price: 15 },
+    { id: "engine",  label: "Engine bay clean", price: 10 }
+  ],
+
+  // "Why choose us" trust points shown under the hero. Edit text/emoji freely.
+  whyUs: [
+    { icon: "🚗", title: "We come to you", text: "Mobile service — we valet on your driveway." },
+    { icon: "🧴", title: "Fully equipped", text: "We bring all our own kit and products." },
+    { icon: "😊", title: "Friendly local lads", text: "Bobby & Bramley, proudly local." },
+    { icon: "✨", title: "Satisfaction guaranteed", text: "We're not happy 'til you are." }
+  ],
+
+  // Special offers banner (loyalty / referral). Leave empty [] to hide it.
+  offers: [
+    { icon: "⭐", text: "Loyalty: every 5th valet is HALF PRICE." },
+    { icon: "👋", text: "Refer a friend — you both get £5 off your next valet." }
+  ],
+
+  // Frequently asked questions (tap to expand). Add/edit freely.
+  faqs: [
+    { q: "How long does a valet take?", a: "A full valet takes around 2½ hours. We'll let you know when we book you in." },
+    { q: "What do you need from me?", a: "Access to an outside water tap, enough room on the driveway to work, and somewhere to park nearby (just up the curb is fine)." },
+    { q: "Do I need to be home?", a: "Not necessarily — as long as we can reach your car, a water tap and have somewhere to park. Just let us know in the notes." },
+    { q: "Do you do vans or bigger vehicles?", a: "Yes! Give us a call or WhatsApp and we'll sort a price for larger vehicles." },
+    { q: "How do I pay?", a: "We'll confirm payment details when we call to confirm your booking." }
+  ],
+
   // Contact numbers shown in the footer. Add, remove or rename people freely
   // — each one becomes a tappable "Call <name>" link.
   contacts: [
@@ -225,6 +256,37 @@ section .sub { color: var(--muted); margin: 0 0 22px; }
 .star-input span { color: var(--border); transition: color .1s ease; }
 .star-input span.on { color: #f5c518; }
 
+/* "Why choose us" strip */
+.why-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.why-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+.why-item .icon { font-size: 24px; line-height: 1; margin-bottom: 8px; }
+.why-item h3 { margin: 0 0 4px; font-size: 15px; }
+.why-item p { margin: 0; color: var(--muted); font-size: 13px; }
+@media (min-width: 620px) { .why-grid { grid-template-columns: repeat(4, 1fr); } }
+
+/* Offers banner (loyalty / referral) */
+.offers { background: linear-gradient(135deg, rgba(232,232,234,0.08), rgba(255,138,61,0.10)); border: 1px solid var(--sale); border-radius: var(--radius); padding: 18px 20px; }
+.offers h2 { font-size: 18px; margin: 0 0 10px; }
+.offer-line { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; margin-bottom: 8px; }
+.offer-line:last-child { margin-bottom: 0; }
+.offer-line .icon { font-size: 18px; line-height: 1.4; }
+
+/* FAQ accordion */
+.faq { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 10px; overflow: hidden; }
+.faq summary { cursor: pointer; padding: 15px 18px; font-weight: 600; font-size: 15px; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: "+"; color: var(--muted); font-size: 20px; font-weight: 400; }
+.faq[open] summary::after { content: "−"; }
+.faq .ans { padding: 0 18px 16px; color: var(--muted); font-size: 14px; }
+
+/* Booking add-ons + live total */
+.addon-list { display: grid; gap: 8px; }
+.addon-row { display: flex; align-items: center; gap: 10px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 11px 13px; cursor: pointer; font-size: 15px; }
+.addon-row input { width: 19px; height: 19px; flex: 0 0 auto; accent-color: var(--accent); }
+.addon-row .addon-price { margin-left: auto; font-weight: 700; white-space: nowrap; }
+.booking-total { display: flex; justify-content: space-between; align-items: baseline; margin: 4px 0 14px; font-size: 16px; }
+.booking-total .amt { font-size: 22px; font-weight: 800; }
+
 /* WhatsApp button (green, sits with the call links) */
 .btn-whatsapp { background: #25d366; color: #04130b; }
 .wa-svg { width: 18px; height: 18px; vertical-align: -3px; margin-right: 7px; fill: currentColor; }
@@ -375,10 +437,21 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
       <div class="dots" id="galleryDots"></div>
     </section>
 
+    <section id="whyUs" class="hidden">
+      <div class="why-grid" id="whyGrid"></div>
+    </section>
+
     <section id="services">
       <h2>Services &amp; pricing</h2>
       <p class="sub">Simple, honest pricing. We bring everything we need.</p>
       <div id="serviceList"></div>
+    </section>
+
+    <section id="offers" class="hidden">
+      <div class="offers">
+        <h2>Special offers</h2>
+        <div id="offerList"></div>
+      </div>
     </section>
 
     <section id="reviewsHome">
@@ -388,6 +461,12 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
       <div class="reviews-more">
         <a class="btn btn-ghost" href="#reviews">Read &amp; write reviews</a>
       </div>
+    </section>
+
+    <section id="faq" class="hidden">
+      <h2>Frequently asked questions</h2>
+      <p class="sub">Anything else? Give us a call or WhatsApp.</p>
+      <div id="faqList"></div>
     </section>
 
     <section id="book">
@@ -414,6 +493,13 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
           <select name="service" required>
             <option value="" disabled selected>Choose a service…</option>
           </select>
+        </div>
+        <div class="field" id="addonsField">
+          <label>Optional extras</label>
+          <div class="addon-list" id="addonList"></div>
+        </div>
+        <div class="booking-total" id="bookingTotal" style="display:none">
+          <span>Total</span><span class="amt" id="bookingTotalAmt">£0</span>
         </div>
         <div class="field">
           <label>Date <span class="req">*</span></label>
@@ -661,6 +747,81 @@ function effectivePrice(s) {
   return { pct, was: s.price, now };
 }
 
+/* ---- "Why choose us" strip, offers banner, FAQ (all config-driven) ---- */
+function renderWhyUs() {
+  const sec = document.getElementById("whyUs");
+  const grid = document.getElementById("whyGrid");
+  const items = CONFIG.whyUs || [];
+  if (!grid) return;
+  if (!items.length) { sec.classList.add("hidden"); return; }
+  sec.classList.remove("hidden");
+  grid.innerHTML = items.map(w => `
+    <div class="why-item">
+      <div class="icon">${esc(w.icon || "")}</div>
+      <h3>${esc(w.title)}</h3>
+      <p>${esc(w.text)}</p>
+    </div>`).join("");
+}
+function renderOffers() {
+  const sec = document.getElementById("offers");
+  const list = document.getElementById("offerList");
+  const offers = CONFIG.offers || [];
+  if (!list) return;
+  if (!offers.length) { sec.classList.add("hidden"); return; }
+  sec.classList.remove("hidden");
+  list.innerHTML = offers.map(o => `
+    <div class="offer-line"><span class="icon">${esc(o.icon || "🎉")}</span><span>${esc(o.text)}</span></div>`).join("");
+}
+function renderFaqs() {
+  const sec = document.getElementById("faq");
+  const list = document.getElementById("faqList");
+  const faqs = CONFIG.faqs || [];
+  if (!list) return;
+  if (!faqs.length) { sec.classList.add("hidden"); return; }
+  sec.classList.remove("hidden");
+  list.innerHTML = faqs.map(f => `
+    <details class="faq">
+      <summary>${esc(f.q)}</summary>
+      <div class="ans">${esc(f.a)}</div>
+    </details>`).join("");
+}
+
+/* ---- Booking add-ons (optional extras) + live total ---- */
+function renderAddons() {
+  const box = document.getElementById("addonList");
+  const field = document.getElementById("addonsField");
+  const addons = CONFIG.addons || [];
+  if (!box) return;
+  if (!addons.length) { if (field) field.style.display = "none"; return; }
+  box.innerHTML = addons.map(a => `
+    <label class="addon-row">
+      <input type="checkbox" name="addon" value="${esc(a.id)}" />
+      <span>${esc(a.label)}</span>
+      <span class="addon-price">+ ${money(a.price)}</span>
+    </label>`).join("");
+  box.querySelectorAll('input[name="addon"]').forEach(cb => cb.addEventListener("change", updateBookingTotal));
+}
+function selectedAddons() {
+  return [...document.querySelectorAll('#addonList input[name="addon"]:checked')]
+    .map(cb => (CONFIG.addons || []).find(a => a.id === cb.value)).filter(Boolean);
+}
+// Service (discounted) price + any ticked extras.
+function bookingPrice() {
+  const svc = serviceById(document.querySelector('select[name="service"]').value);
+  const base = svc ? effectivePrice(svc).now : 0;
+  const extras = selectedAddons().reduce((s, a) => s + a.price, 0);
+  return { svc, base, extras, total: base + extras };
+}
+function updateBookingTotal() {
+  const { svc, total } = bookingPrice();
+  const row = document.getElementById("bookingTotal");
+  const amt = document.getElementById("bookingTotalAmt");
+  if (!row || !amt) return;
+  if (!svc) { row.style.display = "none"; return; }
+  amt.textContent = money(total);
+  row.style.display = "flex";
+}
+
 /* =====================================================================
    1. POPULATE THE PAGE FROM CONFIG
    ===================================================================== */
@@ -679,6 +840,13 @@ function buildPage() {
   loadReviews();
   setupStarInput();
   setupWhatsApp();
+
+  // Why-us strip, offers banner, FAQ, booking add-ons.
+  renderWhyUs();
+  renderOffers();
+  renderFaqs();
+  renderAddons();
+  document.querySelector('select[name="service"]').addEventListener("change", updateBookingTotal);
 
   // The sticky header and owner bar use clean text branding (the wide wordmark
   // logo looks cramped/clipped when shrunk into a small bar).
@@ -1043,14 +1211,17 @@ document.getElementById("bookingForm").addEventListener("submit", async function
     return;
   }
 
-  // Column names here must match the database / server function. If a service
-  // is on sale, record the discounted price and note the % off on the label.
+  // Column names here must match the database / server function. Record the
+  // discounted price + any extras as the total, and note them on the label.
   const eff = svc ? effectivePrice(svc) : null;
-  const label = svc ? (eff.pct ? `${svc.label} (${eff.pct}% off)` : svc.label) : data.service;
+  const addons = selectedAddons();
+  let label = svc ? (eff.pct ? `${svc.label} (${eff.pct}% off)` : svc.label) : data.service;
+  if (addons.length) label += " + " + addons.map(a => a.label).join(", ");
+  const total = (eff ? eff.now : 0) + addons.reduce((s, a) => s + a.price, 0);
   const booking = {
     name: data.name.trim(), phone: data.phone.trim(), email: data.email.trim(),
     service_id: data.service, service_label: label,
-    price: eff ? eff.now : null,
+    price: svc ? total : null,
     booking_date: data.date, booking_time: slot.time, detailer: slot.detailer,
     car: data.car.trim(), address: data.address.trim(), notes: data.notes.trim()
   };
@@ -1087,6 +1258,7 @@ function resetBookingForm() {
   form.reset();
   form.classList.remove("hidden");
   document.getElementById("confirm").classList.add("hidden");
+  updateBookingTotal();  // hide the running total again
   loadSlots(); // refresh times so a just-booked slot no longer shows
   form.scrollIntoView({ behavior: "smooth", block: "start" });
 }
