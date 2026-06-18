@@ -64,14 +64,6 @@ const CONFIG = {
     { id: "full",     label: "Full Valet",     price: 40, blurb: "The lot — inside and out. Our most popular booking." }
   ],
 
-  // Optional extras a customer can add to any booking (tick-boxes on the form).
-  // Each adds its price to the total. Add/remove/rename freely.
-  addons: [
-    { id: "pethair", label: "Pet hair removal", price: 10 },
-    { id: "wax",     label: "Wax & polish",     price: 15 },
-    { id: "engine",  label: "Engine bay clean", price: 10 }
-  ],
-
   // "Why choose us" trust points shown under the hero. Edit text/emoji freely.
   whyUs: [
     { icon: "🚗", title: "We come to you", text: "Mobile service — we valet on your driveway." },
@@ -279,14 +271,6 @@ section .sub { color: var(--muted); margin: 0 0 22px; }
 .faq[open] summary::after { content: "−"; }
 .faq .ans { padding: 0 18px 16px; color: var(--muted); font-size: 14px; }
 
-/* Booking add-ons + live total */
-.addon-list { display: grid; gap: 8px; }
-.addon-row { display: flex; align-items: center; gap: 10px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 11px 13px; cursor: pointer; font-size: 15px; }
-.addon-row input { width: 19px; height: 19px; flex: 0 0 auto; accent-color: var(--accent); }
-.addon-row .addon-price { margin-left: auto; font-weight: 700; white-space: nowrap; }
-.booking-total { display: flex; justify-content: space-between; align-items: baseline; margin: 4px 0 14px; font-size: 16px; }
-.booking-total .amt { font-size: 22px; font-weight: 800; }
-
 /* WhatsApp button (green, sits with the call links) */
 .btn-whatsapp { background: #25d366; color: #04130b; }
 .wa-svg { width: 18px; height: 18px; vertical-align: -3px; margin-right: 7px; fill: currentColor; }
@@ -493,13 +477,6 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
           <select name="service" required>
             <option value="" disabled selected>Choose a service…</option>
           </select>
-        </div>
-        <div class="field" id="addonsField">
-          <label>Optional extras</label>
-          <div class="addon-list" id="addonList"></div>
-        </div>
-        <div class="booking-total" id="bookingTotal" style="display:none">
-          <span>Total</span><span class="amt" id="bookingTotalAmt">£0</span>
         </div>
         <div class="field">
           <label>Date <span class="req">*</span></label>
@@ -786,42 +763,6 @@ function renderFaqs() {
     </details>`).join("");
 }
 
-/* ---- Booking add-ons (optional extras) + live total ---- */
-function renderAddons() {
-  const box = document.getElementById("addonList");
-  const field = document.getElementById("addonsField");
-  const addons = CONFIG.addons || [];
-  if (!box) return;
-  if (!addons.length) { if (field) field.style.display = "none"; return; }
-  box.innerHTML = addons.map(a => `
-    <label class="addon-row">
-      <input type="checkbox" name="addon" value="${esc(a.id)}" />
-      <span>${esc(a.label)}</span>
-      <span class="addon-price">+ ${money(a.price)}</span>
-    </label>`).join("");
-  box.querySelectorAll('input[name="addon"]').forEach(cb => cb.addEventListener("change", updateBookingTotal));
-}
-function selectedAddons() {
-  return [...document.querySelectorAll('#addonList input[name="addon"]:checked')]
-    .map(cb => (CONFIG.addons || []).find(a => a.id === cb.value)).filter(Boolean);
-}
-// Service (discounted) price + any ticked extras.
-function bookingPrice() {
-  const svc = serviceById(document.querySelector('select[name="service"]').value);
-  const base = svc ? effectivePrice(svc).now : 0;
-  const extras = selectedAddons().reduce((s, a) => s + a.price, 0);
-  return { svc, base, extras, total: base + extras };
-}
-function updateBookingTotal() {
-  const { svc, total } = bookingPrice();
-  const row = document.getElementById("bookingTotal");
-  const amt = document.getElementById("bookingTotalAmt");
-  if (!row || !amt) return;
-  if (!svc) { row.style.display = "none"; return; }
-  amt.textContent = money(total);
-  row.style.display = "flex";
-}
-
 /* =====================================================================
    1. POPULATE THE PAGE FROM CONFIG
    ===================================================================== */
@@ -841,12 +782,10 @@ function buildPage() {
   setupStarInput();
   setupWhatsApp();
 
-  // Why-us strip, offers banner, FAQ, booking add-ons.
+  // Why-us strip, offers banner, FAQ.
   renderWhyUs();
   renderOffers();
   renderFaqs();
-  renderAddons();
-  document.querySelector('select[name="service"]').addEventListener("change", updateBookingTotal);
 
   // The sticky header and owner bar use clean text branding (the wide wordmark
   // logo looks cramped/clipped when shrunk into a small bar).
@@ -1211,17 +1150,14 @@ document.getElementById("bookingForm").addEventListener("submit", async function
     return;
   }
 
-  // Column names here must match the database / server function. Record the
-  // discounted price + any extras as the total, and note them on the label.
+  // Column names here must match the database / server function. If a service
+  // is on sale, record the discounted price and note the % off on the label.
   const eff = svc ? effectivePrice(svc) : null;
-  const addons = selectedAddons();
-  let label = svc ? (eff.pct ? `${svc.label} (${eff.pct}% off)` : svc.label) : data.service;
-  if (addons.length) label += " + " + addons.map(a => a.label).join(", ");
-  const total = (eff ? eff.now : 0) + addons.reduce((s, a) => s + a.price, 0);
+  const label = svc ? (eff.pct ? `${svc.label} (${eff.pct}% off)` : svc.label) : data.service;
   const booking = {
     name: data.name.trim(), phone: data.phone.trim(), email: data.email.trim(),
     service_id: data.service, service_label: label,
-    price: svc ? total : null,
+    price: eff ? eff.now : null,
     booking_date: data.date, booking_time: slot.time, detailer: slot.detailer,
     car: data.car.trim(), address: data.address.trim(), notes: data.notes.trim()
   };
@@ -1258,7 +1194,6 @@ function resetBookingForm() {
   form.reset();
   form.classList.remove("hidden");
   document.getElementById("confirm").classList.add("hidden");
-  updateBookingTotal();  // hide the running total again
   loadSlots(); // refresh times so a just-booked slot no longer shows
   form.scrollIntoView({ behavior: "smooth", block: "start" });
 }
