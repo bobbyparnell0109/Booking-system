@@ -2,7 +2,8 @@
 
 > **Read this first.** This file is the complete state of the BB Car Detailing
 > project. A new Claude Code session can read it and continue at full
-> capability. Last updated: 2026-06-18.
+> capability. Last updated: 2026-06-18 (discounts, terms popup, WhatsApp,
+> social link preview, reviews, email alerts).
 
 ---
 
@@ -113,6 +114,23 @@ front-end merge.
 - To change any of these: edit the function source (Section 7) and redeploy
   via the Supabase MCP `deploy_edge_function` (keep `verify_jwt = false`).
 
+### Email notifications (Resend) — added 2026-06-18
+On a successful `create`, the function emails an **owner alert** (to
+`OWNER_EMAILS`, currently Bobby's iCloud) and a **customer confirmation** (to the
+booker's email), via **[Resend](https://resend.com)**. Sends are fire-and-forget
+(wrapped in try/catch) so a booking is **never** lost if email fails.
+- `RESEND_API_KEY` — read from env, else a fallback literal in the function.
+  **The real key lives ONLY in the deployed function, NOT in this repo** (same as
+  `ADMIN_PASSWORD`). The Section 7 listing shows a `re_…` placeholder — get the
+  live value from the Supabase function source if redeploying, or ask Bobby.
+- `FROM_EMAIL = "BB Car Detailing <onboarding@resend.dev>"` — Resend's shared
+  sender. **No domain is verified yet**, so Resend only delivers to the Resend
+  account's own email (Bobby's iCloud). That means **owner alerts work**, but
+  **customer confirmations to other people silently don't send** until a domain
+  is verified. Adding Bramley to `OWNER_EMAILS` also needs the domain.
+- To finish it off later: verify a domain in Resend, change `FROM_EMAIL` to that
+  domain, then customer emails + extra recipients all work. Redeploy after edits.
+
 ### How availability works (INVERTED model — "book time off", not "add free time")
 Both people are assumed **free by default** during `DEFAULT_HOURS` every day.
 Owners no longer add free time; instead they book **time off** (holidays / days
@@ -168,6 +186,15 @@ create table public.time_off (
 );
 alter table public.time_off enable row level security;  -- no policies: function-only
 
+-- Discounts / sales (one row per service; service_id is the key so setting a
+-- discount is an upsert). Added 2026-06-18. Function-only: RLS on, no policies.
+create table public.discounts (
+  service_id text primary key,
+  percent    int not null check (percent >= 1 and percent <= 95),
+  updated_at timestamptz not null default now()
+);
+alter table public.discounts enable row level security;  -- no policies: function-only
+
 -- Legacy: availability ranges (NO LONGER USED — kept for history, not read/written)
 create table public.availability (
   id uuid primary key default gen_random_uuid(),
@@ -188,9 +215,12 @@ POST JSON to the function URL with an `action`:
 **Public (no password):**
 - `{ action: "slots" }` → `{ slots: [{slot_date, slot_time, person}, …] }`
   (open start times; the site groups same date+time across people).
+- `{ action: "discounts" }` → `{ discounts: [{service_id, percent}, …] }` —
+  current sales, so the site can show sale prices.
 - `{ action: "create", booking: {…}, persons: ["Bobby"] }` → re-validates the
   time is still free for all `persons`, returns `409 {error:"taken"}` if not,
-  else inserts and returns `{ok:true}`.
+  else inserts and returns `{ok:true}`. **Also fires the booking emails** (owner
+  alert + customer confirmation) — see Section 4.
 
 **Owner (must include `password`):**
 - `{ action: "list" }` → all bookings
@@ -201,6 +231,9 @@ POST JSON to the function URL with an `action`:
   `person` may be `"Both"` (inserts a row for each of `PERSONS`); `end_date`
   optional (defaults to `start_date` for a single day).
 - `{ action: "delete_time_off", id }`
+- `{ action: "set_discount", discount: {service_id, percent} }` — upsert a sale
+  (percent 1–95); one discount per service.
+- `{ action: "remove_discount", service_id }` — end a service's sale.
 
 ---
 
@@ -217,6 +250,12 @@ const JOB_MINUTES = 150;                 // length of one valet (2.5 hours)
 const STEP_MINUTES = 30;                 // offer a start time every 30 mins
 const HORIZON_DAYS = 42;                 // how many days ahead to offer bookings (6 weeks)
 const PERSONS = ["Bobby", "Bramley"];    // the two detailers
+
+// ----- Email notifications (Resend) -----
+// REAL KEY lives only in the deployed function — this is a placeholder.
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") || "re_XXXXXXduplicate_placeholder_XXXXXX";
+const OWNER_EMAILS = ["bobbyparnell0109@icloud.com"];  // who gets new-booking alerts
+const FROM_EMAIL = "BB Car Detailing <onboarding@resend.dev>";  // change once a domain is verified
 
 // Standard working hours assumed automatically every day. Owners book TIME OFF
 // (holidays / days they can't work) to remove days from this default.
@@ -239,6 +278,23 @@ function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status, headers: { ...CORS, "Content-Type": "application/json" },
   });
+}
+
+function esc(s: unknown) {
+  return String(s ?? "").replace(/[&<>"']/g, c =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
+}
+
+// Fire-and-forget email via Resend; never throws (a booking must not fail on email).
+async function sendEmail(to: string | string[], subject: string, html: string) {
+  if (!RESEND_API_KEY) return;
+  try {
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from: FROM_EMAIL, to, subject, html }),
+    });
+  } catch (_) { /* ignore email errors */ }
 }
 
 function today() { return new Date().toISOString().split("T")[0]; }
@@ -333,6 +389,12 @@ Deno.serve(async (req: Request) => {
     return json({ slots: computeFree(ctx.ranges, ctx.bookings) });
   }
 
+  // Public: current discounts/sales so the site can show sale prices.
+  if (action === "discounts") {
+    const r = await db("discounts", "GET", "?select=service_id,percent&order=service_id.asc");
+    return r.ok ? json({ discounts: r.data }) : json({ error: "Could not load discounts" }, 500);
+  }
+
   if (action === "create") {
     const b = payload.booking || {};
     const persons: string[] = Array.isArray(payload.persons) ? payload.persons : [];
@@ -355,7 +417,29 @@ Deno.serve(async (req: Request) => {
       detailer: b.detailer ?? null, busy_persons: persons.length ? persons : null,
     };
     const r = await db("bookings", "POST", "", row, "return=minimal");
-    return r.ok ? json({ ok: true }) : json({ error: "Could not save booking" }, 500);
+    if (!r.ok) return json({ error: "Could not save booking" }, 500);
+
+    // Notify owners + customer (only if RESEND_API_KEY is configured).
+    const priceTxt = row.price != null ? ` (£${row.price})` : "";
+    const summary = `${row.service_label || "Valet"}${priceTxt} — ${row.booking_date} at ${row.booking_time}`;
+    const ownerHtml = `<h2>New booking</h2><p>${esc(summary)}</p><ul>
+      <li><b>Name:</b> ${esc(row.name)}</li>
+      <li><b>Phone:</b> ${esc(row.phone)}</li>
+      <li><b>Email:</b> ${esc(row.email)}</li>
+      <li><b>Car:</b> ${esc(row.car || "")}</li>
+      <li><b>Address:</b> ${esc(row.address || "")}</li>
+      ${row.detailer ? `<li><b>Detailer:</b> ${esc(row.detailer)}</li>` : ""}
+      ${row.notes ? `<li><b>Notes:</b> ${esc(row.notes)}</li>` : ""}
+    </ul>`;
+    await sendEmail(OWNER_EMAILS, "New booking: " + summary, ownerHtml);
+    if (row.email) {
+      const custHtml = `<h2>Thanks ${esc(row.name)}!</h2>
+        <p>We've received your booking request for a <b>${esc(row.service_label || "valet")}</b> on <b>${esc(row.booking_date)}</b> at <b>${esc(row.booking_time)}</b>.</p>
+        <p>We'll give you a call on ${esc(row.phone)} to confirm the details.</p>
+        <p>— BB Car Detailing · Cleaner. Shinier. Better.</p>`;
+      await sendEmail(row.email, "We've got your booking — BB Car Detailing", custHtml);
+    }
+    return json({ ok: true });
   }
 
   if (payload?.password !== ADMIN_PASSWORD) return json({ error: "Unauthorized" }, 401);
@@ -393,6 +477,23 @@ Deno.serve(async (req: Request) => {
     return r.ok ? json({ ok: true }) : json({ error: "Could not delete time off" }, 500);
   }
 
+  // ----- Discounts / sales (owner) -----
+  if (action === "set_discount") {
+    const d = payload.discount || {};
+    const pct = Number(d.percent);
+    if (!d.service_id || !Number.isInteger(pct) || pct < 1 || pct > 95) {
+      return json({ error: "Invalid discount" }, 400);
+    }
+    const row = { service_id: d.service_id, percent: pct, updated_at: new Date().toISOString() };
+    const r = await db("discounts", "POST", "", row, "resolution=merge-duplicates,return=minimal");
+    return r.ok ? json({ ok: true }) : json({ error: "Could not save discount" }, 500);
+  }
+  if (action === "remove_discount") {
+    if (!payload.service_id) return json({ error: "Missing service_id" }, 400);
+    const r = await db("discounts", "DELETE", `?service_id=eq.${encodeURIComponent(payload.service_id)}`, undefined, "return=minimal");
+    return r.ok ? json({ ok: true }) : json({ error: "Could not remove discount" }, 500);
+  }
+
   return json({ error: "Unknown action" }, 400);
 });
 ```
@@ -408,8 +509,16 @@ Everything editable is near the top — search the file for **`EDIT`**:
   Exterior Wash £25, Interior Only £25, Full Valet £40.
 - `contacts[]` — currently **Bobby 07903 512940**, **Bramley 07434 651512**
   (each becomes a tappable "Call <name>" link in the footer).
+- `whatsapp` — number in **international** format (no spaces/`+`; UK = drop the
+  leading 0, prepend 44). Currently `"447903512940"` (Bobby). Drives the green
+  **"WhatsApp us"** button in the hero + footer (pre-filled message). `""` hides it.
+- `reviews[]` — `{name, stars, text}` customer reviews shown in the **"What our
+  customers say"** section (star ratings). Seeded with 3 **placeholder** reviews —
+  replace with real ones. Empty array hides the section.
 - `facebookUrl` — set to the real page
   (`https://www.facebook.com/share/184bo5SHpP/?mibextid=wwXIfr`).
+- **Social link preview**: `<head>` has Open Graph / Twitter meta + favicon
+  (logo as the share image) so shared links show a card. Update if branding changes.
 - `logoUrl` — `"logo.jpg"`. When set, the logo is **featured large in the hero
   only** (the H1 text is kept but visually hidden for SEO/screen readers). The
   sticky header and owner bar deliberately use **text branding** ("BB Car
@@ -427,7 +536,7 @@ Everything editable is near the top — search the file for **`EDIT`**:
 
 ## 9. Status
 
-**Done (all merged to `main` and live; PRs #1–#9):**
+**Done (all merged to `main` and live; PRs #1–#13):**
 - Landing page; **BB Car Detailing** branding + "Cleaner. Shinier. Better."
 - **Logo** (`logo.jpg`) featured large in the hero; header + owner bar use clean
   **text branding** (the wide wordmark looked clipped in a small bar).
@@ -453,6 +562,23 @@ Everything editable is near the top — search the file for **`EDIT`**:
   `time_off` data; chronological list with Remove buttons sits below it.
 - **Marketing:** booking **QR code** saved as `bb-qr.png` (links to `…/#book`);
   a poster/leaflet prompt for "Claude design" saved in `POSTER-PROMPT.md`.
+- **Discounts / sales (2026-06-18, PR #11):** owner page card to put a service on
+  sale by a % (1–95); main page shows old price struck through + new price + a
+  "% off" badge; booking dropdown + saved price use the sale price. Backed by the
+  `discounts` table and `discounts`/`set_discount`/`remove_discount` actions.
+- **"Please read" terms popup (PR #12):** modal on page open (water supply, room
+  to detail, parking) with an "I accept these terms" button; **required** "I agree
+  to our terms" checkbox by the booking button, with a "terms" link that reopens it.
+- **WhatsApp button (PR #13):** green "WhatsApp us" in hero + footer
+  (`CONFIG.whatsapp`, pre-filled message).
+- **Social link preview (PR #13):** Open Graph / Twitter card meta + favicon (logo
+  as share image) so shared links show a proper card + home-screen icon.
+- **Reviews (PR #13):** "What our customers say" section with star ratings
+  (`CONFIG.reviews`) — currently **placeholder** reviews to be replaced with real ones.
+- **Booking email alerts (Resend, function v8):** every booking emails the owner
+  (`OWNER_EMAILS`) + the customer. **Live and tested** (owner alert confirmed
+  landing). See Section 4 for the domain caveat (customer emails to other people
+  need a verified domain).
 
 **TODO (waiting on the user to provide assets):**
 1. **Before/after photos** — the user will send images (attached in chat → copy
@@ -462,6 +588,10 @@ Everything editable is near the top — search the file for **`EDIT`**:
 2. (Optional) the user is making a **poster** in Claude design using
    `POSTER-PROMPT.md`, their logo, the QR, and a photo of Bobby & Bramley — may
    ask for tweaks to the prompt or a Facebook caption.
+3. **Real reviews** — replace the 3 placeholder `CONFIG.reviews` with genuine
+   customer quotes when available.
+4. **(Optional) Verify a Resend domain** (~£10/yr) so **customer** confirmation
+   emails + Bramley's alerts send (see Section 4). Owner alerts already work.
 
 **Good to know:**
 - When a booking is **deleted** in the owner page, its time **reopens
@@ -484,6 +614,16 @@ Everything editable is near the top — search the file for **`EDIT`**:
 - The network sandbox in these sessions blocks outbound calls to Supabase, so
   the function can't be `curl`-tested from the tool environment — test the DB
   layer with `execute_sql` and trust the function, or test live in the browser.
+  Email sending likewise can only be verified by a **live test booking**.
+- **Secrets stay out of the repo:** the real `RESEND_API_KEY` (and the admin
+  password) live **only in the deployed Edge Function**, never in `index.html` or
+  this doc. Section 7's listing shows a `re_…` placeholder — if redeploying, pull
+  the live key from the function source (Supabase MCP `get_edge_function`) or ask
+  Bobby. Never commit the real key.
+- **User preference (Bobby, 2026-06-18):** "every time I tell you to do something
+  new, always make it live." So once scoped to the repo: build → commit/push →
+  open + squash-merge the PR to `main` → resync the branch, without waiting to be
+  told "go live". (Backend/Supabase changes are already live on deploy.)
 - **Native date input quirk:** iOS Safari renders `<input type=date>` wider,
   taller and centre-aligned. There's CSS normalising it
   (`-webkit-appearance:none`, left-aligned `::-webkit-date-and-time-value`) so it
