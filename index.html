@@ -77,13 +77,8 @@ const CONFIG = {
   // Leave as "" to hide the WhatsApp button.
   whatsapp: "447903512940",
 
-  // Customer reviews shown on the home page. EDIT freely — add real ones as they
-  // come in. `stars` is 1–5. Keep `text` short and punchy.
-  reviews: [
-    { name: "Sarah M.",  stars: 5, text: "Came right to my driveway and my car looked brand new. Lovely lads, brilliant job!" },
-    { name: "Dan R.",    stars: 5, text: "Booked the full valet — spotless inside and out. Will be using them every month now." },
-    { name: "Leanne T.", stars: 5, text: "So easy to book and they turned up bang on time. Car's never looked better. Highly recommend." }
-  ],
+  // NOTE: Reviews are now written by customers on the Reviews tab and stored
+  // online (no longer listed here). The home page shows the best 3 automatically.
 
   // Your logo. Upload the image file to the repo (same place as this file) and
   // put its name here, e.g. "logo.png". Leave as "" to show the "BB" text box.
@@ -147,6 +142,9 @@ header.site {
   background: var(--accent); color: var(--accent-ink); text-decoration: none;
   font-weight: 600; font-size: 14px; padding: 9px 16px; border-radius: 999px;
 }
+.nav-actions { display: flex; align-items: center; gap: 14px; }
+.nav a.navlink { text-decoration: none; font-weight: 600; font-size: 14px; color: var(--muted); }
+.nav a.navlink:hover { color: var(--text); }
 
 .hero { padding: 48px 0 36px; text-align: center; }
 .hero .hero-logo { width: 100%; max-width: 360px; height: auto; margin: 0 auto 18px; }
@@ -214,6 +212,18 @@ section .sub { color: var(--muted); margin: 0 0 22px; }
 .review .stars { color: #f5c518; font-size: 15px; letter-spacing: 2px; margin-bottom: 8px; }
 .review .text { margin: 0 0 10px; font-size: 15px; }
 .review .who { margin: 0; color: var(--muted); font-size: 13px; font-weight: 600; }
+.review .who .date { color: var(--muted); font-weight: 400; }
+.review .rev-del { float: right; cursor: pointer; font-size: 12px; font-weight: 600; padding: 5px 11px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-2); color: var(--danger); }
+.reviews-empty { background: var(--surface); border: 1px dashed var(--border); border-radius: var(--radius); padding: 26px 20px; text-align: center; color: var(--muted); }
+.reviews-summary { display: flex; align-items: baseline; gap: 10px; margin-bottom: 16px; }
+.reviews-summary .big { font-size: 30px; font-weight: 800; color: var(--text); }
+.reviews-summary .stars { color: #f5c518; font-size: 18px; letter-spacing: 2px; }
+.reviews-more { text-align: center; margin-top: 6px; }
+
+/* Clickable star rating input (write a review) */
+.star-input { display: flex; gap: 6px; font-size: 30px; line-height: 1; cursor: pointer; user-select: none; }
+.star-input span { color: var(--border); transition: color .1s ease; }
+.star-input span.on { color: #f5c518; }
 
 /* WhatsApp button (green, sits with the call links) */
 .btn-whatsapp { background: #25d366; color: #04130b; }
@@ -343,7 +353,10 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
       <div class="brand">
         <span id="brandName">BB Car Detailing</span>
       </div>
-      <a class="cta" href="#book">Book now</a>
+      <div class="nav-actions">
+        <a class="navlink" href="#reviews">Reviews</a>
+        <a class="cta" href="#book">Book now</a>
+      </div>
     </div>
   </header>
 
@@ -368,10 +381,13 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
       <div id="serviceList"></div>
     </section>
 
-    <section id="reviews" class="hidden">
+    <section id="reviewsHome">
       <h2>What our customers say</h2>
       <p class="sub">Don't just take our word for it.</p>
       <div id="reviewList"></div>
+      <div class="reviews-more">
+        <a class="btn btn-ghost" href="#reviews">Read &amp; write reviews</a>
+      </div>
     </section>
 
     <section id="book">
@@ -444,6 +460,7 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
   <footer class="site">
     <div class="wrap">
       <div class="links" id="footerLinks">
+        <a href="#reviews">Reviews</a>
         <a id="fbLink" href="#" target="_blank" rel="noopener">Facebook</a>
         <!-- "Call <name>" links are added here automatically from CONFIG.contacts -->
       </div>
@@ -452,6 +469,58 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
     </div>
   </footer>
 </div><!-- /#main -->
+
+
+<!-- ===================== REVIEWS PAGE ===================== -->
+<div id="reviews" class="hidden">
+  <header class="site">
+    <div class="wrap nav">
+      <div class="brand"><span>BB Car Detailing</span></div>
+      <a class="cta" href="#">View site</a>
+    </div>
+  </header>
+
+  <div class="wrap" style="padding-top:30px; padding-bottom:50px;">
+    <h2 style="margin:0 0 6px">Reviews</h2>
+    <p class="sub">See what customers think — and leave your own.</p>
+
+    <!-- Write a review -->
+    <form id="reviewForm" class="card" novalidate style="margin-bottom:26px">
+      <h3 style="margin-top:0">Leave a review</h3>
+      <div class="field">
+        <label>Your name <span class="req">*</span></label>
+        <input type="text" name="rname" autocomplete="name" maxlength="60" required />
+      </div>
+      <div class="field">
+        <label>Your rating <span class="req">*</span></label>
+        <div class="star-input" id="starInput" role="radiogroup" aria-label="Star rating">
+          <span data-v="1" role="radio" aria-label="1 star">★</span>
+          <span data-v="2" role="radio" aria-label="2 stars">★</span>
+          <span data-v="3" role="radio" aria-label="3 stars">★</span>
+          <span data-v="4" role="radio" aria-label="4 stars">★</span>
+          <span data-v="5" role="radio" aria-label="5 stars">★</span>
+        </div>
+        <input type="hidden" name="rstars" id="reviewStars" value="0" />
+      </div>
+      <div class="field">
+        <label>Your review <span class="req">*</span></label>
+        <textarea name="rtext" maxlength="600" placeholder="How did we do?" required></textarea>
+      </div>
+      <button type="submit" id="reviewSubmit" class="btn btn-primary btn-full">Post review</button>
+      <p id="reviewError" class="form-error hidden"></p>
+    </form>
+
+    <div id="reviewThanks" class="confirm hidden" style="margin-bottom:26px">
+      <div class="tick">✓</div>
+      <h3 style="margin:0 0 6px">Thanks for your review!</h3>
+      <p style="margin:0;color:var(--muted)">It's now live on the site.</p>
+    </div>
+
+    <!-- All reviews -->
+    <div id="reviewsSummary"></div>
+    <div id="allReviews"></div>
+  </div>
+</div><!-- /#reviews -->
 
 
 <!-- ===================== ADMIN PAGE ===================== -->
@@ -538,6 +607,16 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
         <div id="discList" style="margin-top:8px"></div>
       </div>
 
+      <!-- ===== Reviews moderation ===== -->
+      <div class="card" style="margin-bottom:18px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h3 style="margin:0">Reviews</h3>
+          <button class="btn btn-ghost" style="padding:8px 14px;font-size:13px" onclick="loadReviewsAdmin()">Refresh</button>
+        </div>
+        <p class="sub" style="margin:6px 0 12px">Customers post these on the Reviews tab. Delete any you don't want shown.</p>
+        <div id="adminReviewList"></div>
+      </div>
+
       <!-- ===== Bookings ===== -->
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
         <h3 style="margin:0">Bookings</h3>
@@ -597,7 +676,8 @@ function buildPage() {
   document.getElementById("fbLink").href = CONFIG.facebookUrl;
 
   // Reviews + WhatsApp button.
-  renderReviews();
+  loadReviews();
+  setupStarInput();
   setupWhatsApp();
 
   // The sticky header and owner bar use clean text branding (the wide wordmark
@@ -680,23 +760,129 @@ async function loadPublicDiscounts() {
   renderServiceOptions();
 }
 
-/* ---- Customer reviews ---- */
-function renderReviews() {
-  const sec = document.getElementById("reviews");
-  const list = document.getElementById("reviewList");
-  const reviews = (CONFIG.reviews || []).filter(r => r && r.text);
-  if (!reviews.length) { sec.classList.add("hidden"); return; }
-  sec.classList.remove("hidden");
-  list.innerHTML = reviews.map(r => {
-    const n = Math.max(0, Math.min(5, Math.round(r.stars || 5)));
-    const stars = "★".repeat(n) + "☆".repeat(5 - n);
-    return `
+/* =====================================================================
+   CUSTOMER REVIEWS — written by customers, stored online.
+   Home page shows the best 3; the Reviews tab shows all + a write form.
+   ===================================================================== */
+let reviewsAll = [];  // server returns them best-first (stars desc, then newest)
+
+function starStr(n) {
+  n = Math.max(0, Math.min(5, Math.round(n || 0)));
+  return "★".repeat(n) + "☆".repeat(5 - n);
+}
+function reviewCard(r, withDate) {
+  const date = withDate && r.created_at ? ` <span class="date">· ${formatDate((r.created_at || "").split("T")[0])}</span>` : "";
+  return `
     <div class="review">
-      <div class="stars" aria-label="${n} out of 5 stars">${stars}</div>
+      <div class="stars" aria-label="${r.stars} out of 5 stars">${starStr(r.stars)}</div>
       <p class="text">${esc(r.text)}</p>
-      <p class="who">— ${esc(r.name || "Happy customer")}</p>
+      <p class="who">— ${esc(r.name)}${date}</p>
     </div>`;
-  }).join("");
+}
+
+async function loadReviews() {
+  const { ok, data } = await api({ action: "list_reviews" });
+  if (!ok) return;
+  reviewsAll = data.reviews || [];
+  renderHomeReviews();
+  renderAllReviews();
+}
+
+// Home page: best 3 (or a friendly empty state).
+function renderHomeReviews() {
+  const list = document.getElementById("reviewList");
+  const moreLink = document.querySelector("#reviewsHome .reviews-more a");
+  if (!list) return;
+  if (!reviewsAll.length) {
+    list.innerHTML = `<div class="reviews-empty">No reviews yet — be the first to leave one!</div>`;
+    if (moreLink) moreLink.textContent = "Write a review";
+    return;
+  }
+  list.innerHTML = reviewsAll.slice(0, 3).map(r => reviewCard(r)).join("");
+  if (moreLink) moreLink.textContent =
+    reviewsAll.length > 3 ? `Read all ${reviewsAll.length} reviews` : "Read & write reviews";
+}
+
+// Reviews tab: average summary + every review.
+function renderAllReviews() {
+  const box = document.getElementById("allReviews");
+  const sum = document.getElementById("reviewsSummary");
+  if (!box) return;
+  if (!reviewsAll.length) {
+    if (sum) sum.innerHTML = "";
+    box.innerHTML = `<div class="reviews-empty">No reviews yet — be the first to leave one above!</div>`;
+    return;
+  }
+  const avg = reviewsAll.reduce((a, r) => a + (r.stars || 0), 0) / reviewsAll.length;
+  if (sum) sum.innerHTML = `<div class="reviews-summary">
+    <span class="big">${avg.toFixed(1)}</span>
+    <span class="stars">${starStr(avg)}</span>
+    <span class="sub" style="margin:0">${reviewsAll.length} review${reviewsAll.length > 1 ? "s" : ""}</span>
+  </div>`;
+  box.innerHTML = reviewsAll.map(r => reviewCard(r, true)).join("");
+}
+
+// Clickable star rating widget on the write-a-review form.
+function setupStarInput() {
+  const wrap = document.getElementById("starInput");
+  const hidden = document.getElementById("reviewStars");
+  if (!wrap || !hidden) return;
+  const stars = [...wrap.querySelectorAll("span")];
+  const paint = n => stars.forEach(s => s.classList.toggle("on", Number(s.dataset.v) <= n));
+  stars.forEach(s => s.addEventListener("click", () => { hidden.value = s.dataset.v; paint(Number(s.dataset.v)); }));
+}
+
+// Submit a new review.
+document.getElementById("reviewForm").addEventListener("submit", async function (e) {
+  e.preventDefault();
+  const name = this.rname.value.trim();
+  const stars = Number(document.getElementById("reviewStars").value);
+  const text = this.rtext.value.trim();
+  const err = document.getElementById("reviewError");
+  err.classList.add("hidden");
+  if (!name || !text || !stars) {
+    err.textContent = "Please add your name, a star rating and a review.";
+    err.classList.remove("hidden");
+    return;
+  }
+  const btn = document.getElementById("reviewSubmit");
+  btn.disabled = true; btn.textContent = "Posting…";
+  try {
+    const { ok } = await api({ action: "add_review", review: { name, stars, text } });
+    if (!ok) throw new Error();
+    this.reset();
+    document.getElementById("reviewStars").value = "0";
+    [...document.querySelectorAll("#starInput span")].forEach(s => s.classList.remove("on"));
+    this.classList.add("hidden");
+    document.getElementById("reviewThanks").classList.remove("hidden");
+    await loadReviews();
+  } catch {
+    err.textContent = "Sorry — couldn't post that. Please try again.";
+    err.classList.remove("hidden");
+  } finally {
+    btn.disabled = false; btn.textContent = "Post review";
+  }
+});
+
+/* ---- Reviews moderation (owner) ---- */
+async function loadReviewsAdmin() {
+  const box = document.getElementById("adminReviewList");
+  const { ok, data } = await api({ action: "list_reviews" });
+  if (!ok || !box) return;
+  const list = data.reviews || [];
+  if (!list.length) { box.innerHTML = '<p class="sub" style="margin:0">No reviews yet.</p>'; return; }
+  box.innerHTML = list.map(r => `
+    <div class="review">
+      <button class="rev-del" onclick="deleteReview('${r.id}')">Delete</button>
+      <div class="stars">${starStr(r.stars)}</div>
+      <p class="text">${esc(r.text)}</p>
+      <p class="who">— ${esc(r.name)}${r.created_at ? ` <span class="date">· ${formatDate((r.created_at || "").split("T")[0])}</span>` : ""}</p>
+    </div>`).join("");
+}
+async function deleteReview(id) {
+  if (!confirm("Delete this review? This can't be undone.")) return;
+  const { ok } = await api({ action: "delete_review", password: adminPassword, id });
+  if (ok) { loadReviewsAdmin(); loadReviews(); }
 }
 
 /* ---- WhatsApp button (hero + footer), built from CONFIG.whatsapp ---- */
@@ -967,6 +1153,7 @@ function showAdminPanel(bookings) {
   renderBookings(bookings);
   loadTimeOff();
   loadDiscountsAdmin();
+  loadReviewsAdmin();
 }
 
 /* ---- Discounts / sales management (owner) ---- */
@@ -1202,12 +1389,14 @@ function acceptTerms() {
 }
 
 /* =====================================================================
-   5. TINY ROUTER — show admin when URL hash is #admin, else the site
+   5. TINY ROUTER — #admin = owner page, #reviews = reviews tab, else site
    ===================================================================== */
 function route() {
   const isAdmin = location.hash === "#admin";
+  const isReviews = location.hash === "#reviews";
   document.getElementById("admin").classList.toggle("hidden", !isAdmin);
-  document.getElementById("main").classList.toggle("hidden", isAdmin);
+  document.getElementById("reviews").classList.toggle("hidden", !isReviews);
+  document.getElementById("main").classList.toggle("hidden", isAdmin || isReviews);
   if (isAdmin) {
     window.scrollTo(0, 0);
     // If we still have a password from earlier this tab, try to go straight
@@ -1219,6 +1408,13 @@ function route() {
       });
     }
   }
+  if (isReviews) {
+    window.scrollTo(0, 0);
+    // Fresh write-form each visit (hide any leftover "thanks" message).
+    document.getElementById("reviewForm").classList.remove("hidden");
+    document.getElementById("reviewThanks").classList.add("hidden");
+    loadReviews();
+  }
 }
 window.addEventListener("hashchange", route);
 
@@ -1226,8 +1422,8 @@ buildPage();
 route();
 
 // Show the "Please read" terms popup when the site first opens (not on the
-// owner page).
-if (location.hash !== "#admin") showTerms();
+// owner or reviews pages).
+if (location.hash !== "#admin" && location.hash !== "#reviews") showTerms();
 </script>
 
 </body>
