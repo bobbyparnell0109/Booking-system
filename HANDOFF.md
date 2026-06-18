@@ -1,8 +1,8 @@
-# BB Details — Project Handoff & Context
+# BB Car Detailing — Project Handoff & Context
 
-> **Read this first.** This file is the complete state of the BB Details
+> **Read this first.** This file is the complete state of the BB Car Detailing
 > project. A new Claude Code session can read it and continue at full
-> capability. Last updated: 2026-06-17.
+> capability. Last updated: 2026-06-18.
 
 ---
 
@@ -66,10 +66,24 @@ to upload them via Safari in that case.
 changes on a feature branch are **not live** until merged into `main`. With the
 GitHub tools: open a PR (`head` = feature branch, `base` = main) and merge it
 (squash). Only do this when the user says to go live. After merging, give the
-user the live URL with a **cache-buster** (`?v=2`, `?v=3`, …).
+user the live URL with a **cache-buster** (`?v=2`, `?v=3`, …). The user has
+been happy for Claude to open AND merge the PR itself once they say "go live".
+
+**Squash-merge gotcha (do this every time):** squash-merging rewrites history,
+so the feature branch diverges from `main` and the *next* PR can report a
+phantom merge conflict. After each successful merge, resync the branch before
+the next change:
+`git fetch origin main && git reset --hard origin/main && git push -f origin <branch>`.
+That keeps the branch a clean continuation of `main`.
+
+**Docs must be on `main`:** a brand-new session clones `main`, so HANDOFF.md /
+POSTER-PROMPT.md changes only reach the next session if they're merged to
+`main` (not left on the feature branch).
 
 Backend changes (Supabase) are done by Claude directly via the Supabase MCP
-tools — no user action needed.
+tools — no user action needed, and they affect the **live** site immediately
+(the function is shared), so coordinate function changes with the matching
+front-end merge.
 
 ---
 
@@ -396,9 +410,11 @@ Everything editable is near the top — search the file for **`EDIT`**:
   (each becomes a tappable "Call <name>" link in the footer).
 - `facebookUrl` — set to the real page
   (`https://www.facebook.com/share/184bo5SHpP/?mibextid=wwXIfr`).
-- `logoUrl` — `"logo.jpg"`. Set to `""` to fall back to the "BB" text box.
-  When set, the logo shows in the header + admin bar and is featured large in
-  the hero (the H1 text is kept but visually hidden for SEO/screen readers).
+- `logoUrl` — `"logo.jpg"`. When set, the logo is **featured large in the hero
+  only** (the H1 text is kept but visually hidden for SEO/screen readers). The
+  sticky header and owner bar deliberately use **text branding** ("BB Car
+  Detailing"), because the wide wordmark logo looked cramped/clipped shrunk into
+  a small bar. Set to `""` to show the hero H1 text instead of the image.
 - `gallery` — array of before/after pairs, e.g.
   `[{ before: "before1.jpg", after: "after1.jpg" }, …]`. Rendered as a
   **swipeable carousel** in the hero (dots appear when there's >1 pair). Empty
@@ -411,32 +427,47 @@ Everything editable is near the top — search the file for **`EDIT`**:
 
 ## 9. Status
 
-**Done:**
-- Landing page (BB Car Detailing branding, logo, tagline)
-- **Logo** wired in (`logo.jpg`) — header, admin bar, and featured large in hero
-- **Facebook link** set to the real page
-- **Swipeable before/after carousel** built (config-driven via `CONFIG.gallery`)
-- Services & pricing
-- Booking form → confirmation, saved to shared Supabase backend
-- Password-protected owner page: bookings list (sorted by date, complete/delete)
-- Two named contact numbers in footer
-- Availability system (**inverted 2026-06-17**): default hours every day
+**Done (all merged to `main` and live; PRs #1–#9):**
+- Landing page; **BB Car Detailing** branding + "Cleaner. Shinier. Better."
+- **Logo** (`logo.jpg`) featured large in the hero; header + owner bar use clean
+  **text branding** (the wide wordmark looked clipped in a small bar).
+- **Facebook link** set to the real page.
+- **Swipeable before/after carousel** built (config-driven via `CONFIG.gallery`;
+  currently empty → placeholders until photos are added).
+- Services & pricing; booking form → confirmation, saved to Supabase.
+- **Booking flow:** customer picks a **date on a calendar** (native
+  `<input type=date>`, constrained to the bookable window) then a **time** from a
+  dropdown for that day. Date & Time fields are **stacked full-width** (a
+  side-by-side row looked cramped on mobile). Native date input is CSS-normalised
+  for iOS (see Gotchas).
+- Password-protected owner page: bookings list (complete/delete).
+- Two named contact numbers in footer.
+- Availability system (**inverted model**): default hours every day
   (weekdays 16:30–19:00, weekends 10:00–18:00); owners book **time off** per
-  person (single day or multi-day range, or "Both") in the admin page; 30-min
-  start times, 2½-hour overlap blocking, per-person + "together"
-- Rebrand + logo + Facebook link merged to `main` and **live** (2026-06-17,
-  squash-merged via PR #1)
+  person (single day or multi-day range, or "Both"); 30-min starts, 2½-hour
+  overlap blocking, per-person + "together". Booking horizon **6 weeks**
+  (`HORIZON_DAYS=42`), rolling.
+- Owner page **colour-coded time-off calendar**: scrollable, shows current month
+  + 6 months ahead (rolls forward automatically). Day colours: **blue=Bobby off,
+  red=Bramley off, purple=both off**, normal=both free. Built from the same
+  `time_off` data; chronological list with Remove buttons sits below it.
+- **Marketing:** booking **QR code** saved as `bb-qr.png` (links to `…/#book`);
+  a poster/leaflet prompt for "Claude design" saved in `POSTER-PROMPT.md`.
 
 **TODO (waiting on the user to provide assets):**
-1. **Before/after photos** — the user will send images; copy them into the repo
-   root and add a `{ before, after }` line per pair to `CONFIG.gallery`. They'll
-   then appear in the hero carousel automatically. Merge to `main` to go live.
+1. **Before/after photos** — the user will send images (attached in chat → copy
+   them from the session upload folder into the repo root). Add a
+   `{ before, after }` line per pair to `CONFIG.gallery`; they appear in the hero
+   carousel automatically. Merge to `main` to go live.
+2. (Optional) the user is making a **poster** in Claude design using
+   `POSTER-PROMPT.md`, their logo, the QR, and a photo of Bobby & Bramley — may
+   ask for tweaks to the prompt or a Facebook caption.
 
 **Good to know:**
 - When a booking is **deleted** in the owner page, its time **reopens
-  automatically**. Availability is computed live from the *current* bookings on
-  every `slots` request, so a removed booking no longer blocks anything. (This
-  was a limitation of the earlier fixed-slot design; the range design fixed it.)
+  automatically** (availability is computed live on every `slots` request).
+- The customer booking window (6 weeks) and the owner time-off calendar (6
+  months) are **separate** ranges — don't confuse them.
 
 ---
 
@@ -453,14 +484,31 @@ Everything editable is near the top — search the file for **`EDIT`**:
 - The network sandbox in these sessions blocks outbound calls to Supabase, so
   the function can't be `curl`-tested from the tool environment — test the DB
   layer with `execute_sql` and trust the function, or test live in the browser.
+- **Native date input quirk:** iOS Safari renders `<input type=date>` wider,
+  taller and centre-aligned. There's CSS normalising it
+  (`-webkit-appearance:none`, left-aligned `::-webkit-date-and-time-value`) so it
+  matches the other fields — keep it if you touch that area.
+- **QR code:** `bb-qr.png` (repo root) links to
+  `https://bobbyparnell0109.github.io/Booking-system/#book`. It's **black
+  modules on a silver tile** (dark-on-light). Do NOT make it light-on-dark
+  ("inverted") — those fail many scanners (verified failing to decode with
+  OpenCV). Regenerate with the Python `qrcode` lib (`pip install qrcode pillow`)
+  if the URL ever changes.
+- Quick JS sanity check after editing `index.html`: extract the `<script>`
+  blocks and `new vm.Script(s)` each in Node to catch syntax errors (there's no
+  build step or test suite).
 
 ---
 
 ## 11. How to resume in a new session
 
 1. Start the session on the **`Booking-system`** repo (add it to the session if
-   prompted) so Claude can push `index.html` directly.
-2. First message: *"Read HANDOFF.md and continue the BB Details project."*
-3. Provide whatever's ready (Facebook URL / logo image / before+after photos)
-   and Claude will wire it in, then either push (if scoped to the repo) or hand
-   back the updated `index.html` to upload.
+   prompted) so Claude can push directly and open/merge PRs.
+2. First message: *"Read HANDOFF.md and continue the BB Car Detailing project."*
+3. If scoped to the repo: develop on a feature branch, commit, push, then (when
+   the user says "go live") open + squash-merge a PR into `main`, and resync the
+   branch (see Section 3). If NOT scoped: edit `index.html` locally and send it
+   to the user to upload via Safari.
+4. The most likely next task is **before/after photos** (drop them into
+   `CONFIG.gallery`) — see Section 9 TODO. The site is otherwise complete and
+   live.
