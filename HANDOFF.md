@@ -2,8 +2,21 @@
 
 > **Read this first.** This file is the complete state of the BB Car Detailing
 > project. A new Claude Code session can read it and continue at full
-> capability. Last updated: 2026-06-18 (discounts, terms popup, WhatsApp,
-> social link preview, reviews, email alerts).
+> capability. Last updated: 2026-06-20 (customer Availability tab, hamburger
+> side menu, weekday hours extended to 7:30pm).
+
+> ## ⚠️ PENDING BACKEND DEPLOY (do this first if not done)
+> On 2026-06-20 the weekday hours were extended to **7:30pm** in the website +
+> owner text, but the **Supabase function deploy was blocked** by an MCP
+> "requires approval" bug (server reconnected mid-session). **The live
+> `bb-bookings` function still has weekday end `19:00`** — it needs to be
+> `19:30` (so weekday starts 16:30 AND 17:00 are offered).
+> **To finish:** fetch the CURRENT deployed function with the Supabase MCP
+> `get_edge_function` (project `qqkxxywdlqqkipioycaq`), change
+> `DEFAULT_HOURS.weekday.end` from `"19:00"` to `"19:30"`, and redeploy with
+> `deploy_edge_function` (`verify_jwt: false`). **Do NOT redeploy from the
+> Section 7 listing below — it is older than the live function** (missing the
+> reviews/loyalty/referred_by code); edit the live source instead.
 
 ---
 
