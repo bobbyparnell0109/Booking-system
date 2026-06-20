@@ -399,7 +399,8 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
 .avail-day .dname { display: block; font-weight: 700; font-size: 14px; }
 .avail-day .ddate { display: block; color: var(--muted); font-size: 12px; }
 .avail-times { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.avail-chip { background: rgba(62,207,142,0.10); border: 1px solid rgba(62,207,142,0.4); color: var(--ok); border-radius: 999px; padding: 5px 11px; font-size: 13px; font-weight: 700; }
+.avail-chip { background: rgba(62,207,142,0.10); border: 1px solid rgba(62,207,142,0.4); color: var(--ok); border-radius: 999px; padding: 5px 11px; font-size: 13px; font-weight: 700; cursor: pointer; }
+.avail-chip:hover, .avail-chip:focus { background: rgba(62,207,142,0.25); outline: none; }
 .avail-none { color: var(--muted); font-size: 13px; }
 
 @media (min-width: 620px) { .hero h1 { font-size: 46px; } }
@@ -1681,7 +1682,7 @@ function renderWeek() {
     if (iso < todayStr) body = '<span class="avail-none">—</span>';
     else if (iso > horizonEnd) body = '<span class="avail-none">Not open for booking yet</span>';
     else if (!times.length) body = '<span class="avail-none">Fully booked / off</span>';
-    else body = times.map(t => `<span class="avail-chip">${esc(t.time)}</span>`).join("");
+    else body = times.map(t => `<span class="avail-chip" role="button" tabindex="0" onclick="bookSlot('${iso}','${t.time}')" onkeydown="if(event.key==='Enter'||event.key===' ')bookSlot('${iso}','${t.time}')">${esc(t.time)}</span>`).join("");
     html += `<div class="avail-row ${iso < todayStr ? "past" : ""} ${iso === todayStr ? "today" : ""}">
       <div class="avail-day"><span class="dname">${CAL_DAYNAMES[i]}</span><span class="ddate">${fmtDM(iso)}</span></div>
       <div class="avail-times">${body}</div>
@@ -1693,6 +1694,20 @@ function renderWeek() {
   document.getElementById("monthPrev").disabled = start <= minStart;
   document.getElementById("weekNext").disabled = start >= maxStart;
   document.getElementById("monthNext").disabled = start >= maxStart;
+}
+
+function bookSlot(date, time) {
+  location.hash = "#book";
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const dateEl = document.getElementById("dateSelect");
+    dateEl.value = date;
+    onDateChange();
+    const slots = slotsByDate[date] || [];
+    const idx = slots.findIndex(s => s.time === time);
+    const timeSel = document.getElementById("slotSelect");
+    if (idx >= 0) timeSel.value = String(idx);
+    document.getElementById("book").scrollIntoView({ behavior: "smooth", block: "start" });
+  }));
 }
 
 /* =====================================================================
