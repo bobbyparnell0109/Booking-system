@@ -372,6 +372,36 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
 .loyalty { display: inline-block; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); color: var(--muted); }
 .loyalty.milestone { background: var(--sale); border-color: var(--sale); color: #1a0e03; }
 
+/* Hamburger + slide-in side menu */
+.nav-left { display: flex; align-items: center; gap: 8px; }
+.hamburger { background: none; border: none; color: var(--text); font-size: 22px; line-height: 1; cursor: pointer; padding: 6px 8px; border-radius: 8px; }
+.hamburger:hover { background: var(--surface-2); }
+.drawer-overlay { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.55); }
+.drawer { position: absolute; top: 0; left: 0; height: 100%; width: 80%; max-width: 300px; background: var(--surface); border-right: 1px solid var(--border); box-shadow: 2px 0 24px rgba(0,0,0,0.45); padding: 18px 16px; display: flex; flex-direction: column; gap: 4px; }
+.drawer-close { align-self: flex-end; background: none; border: none; color: var(--muted); font-size: 22px; cursor: pointer; padding: 4px 8px; }
+.drawer-brand { font-weight: 700; font-size: 16px; margin: 0 8px 10px; }
+.drawer a { display: block; padding: 13px 12px; border-radius: 10px; text-decoration: none; color: var(--text); font-weight: 600; font-size: 16px; }
+.drawer a:hover { background: var(--surface-2); }
+.drawer a.book { background: var(--accent); color: var(--accent-ink); text-align: center; margin-top: 8px; }
+
+/* Weekly availability calendar (customer-facing) */
+.week-nav { display: flex; align-items: center; gap: 10px; margin: 16px 0 10px; }
+.week-label { flex: 1; text-align: center; font-weight: 700; font-size: 15px; }
+.week-btn { background: var(--surface-2); border: 1px solid var(--border); color: var(--text); font-size: 20px; width: 44px; height: 44px; border-radius: 10px; cursor: pointer; flex: 0 0 auto; }
+.week-btn:disabled { opacity: .35; cursor: default; }
+.week-jump { display: flex; gap: 10px; justify-content: center; margin-bottom: 16px; }
+.btn-sm { padding: 8px 14px; font-size: 13px; }
+.week-grid { display: flex; flex-direction: column; gap: 8px; }
+.avail-row { display: flex; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
+.avail-row.past { opacity: .45; }
+.avail-row.today { border-color: var(--accent); }
+.avail-day { flex: 0 0 58px; }
+.avail-day .dname { display: block; font-weight: 700; font-size: 14px; }
+.avail-day .ddate { display: block; color: var(--muted); font-size: 12px; }
+.avail-times { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.avail-chip { background: rgba(62,207,142,0.10); border: 1px solid rgba(62,207,142,0.4); color: var(--ok); border-radius: 999px; padding: 5px 11px; font-size: 13px; font-weight: 700; }
+.avail-none { color: var(--muted); font-size: 13px; }
+
 @media (min-width: 620px) { .hero h1 { font-size: 46px; } }
 </style>
 </head>
@@ -394,17 +424,27 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
   </div>
 </div>
 
+<!-- ===================== SIDE MENU (shared) ===================== -->
+<div id="sideMenu" class="drawer-overlay hidden" onclick="closeMenuFromOverlay(event)">
+  <nav class="drawer" aria-label="Menu">
+    <button class="drawer-close" onclick="closeMenu()" aria-label="Close menu">✕</button>
+    <p class="drawer-brand">BB Car Detailing</p>
+    <a href="#" onclick="closeMenu()">🏠 Home</a>
+    <a href="#availability" onclick="closeMenu()">📅 Availability</a>
+    <a href="#reviews" onclick="closeMenu()">⭐ Reviews</a>
+    <a class="book" href="#book" onclick="closeMenu()">Book a valet</a>
+  </nav>
+</div>
+
 <!-- ===================== PUBLIC SITE ===================== -->
 <div id="main">
   <header class="site">
     <div class="wrap nav">
-      <div class="brand">
-        <span id="brandName">BB Car Detailing</span>
+      <div class="nav-left">
+        <button class="hamburger" onclick="openMenu()" aria-label="Open menu">☰</button>
+        <div class="brand"><span id="brandName">BB Car Detailing</span></div>
       </div>
-      <div class="nav-actions">
-        <a class="navlink" href="#reviews">Reviews</a>
-        <a class="cta" href="#book">Book now</a>
-      </div>
+      <a class="cta" href="#book">Book now</a>
     </div>
   </header>
 
@@ -529,6 +569,7 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
   <footer class="site">
     <div class="wrap">
       <div class="links" id="footerLinks">
+        <a href="#availability">Availability</a>
         <a href="#reviews">Reviews</a>
         <a id="fbLink" href="#" target="_blank" rel="noopener">Facebook</a>
         <!-- "Call <name>" links are added here automatically from CONFIG.contacts -->
@@ -544,7 +585,10 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
 <div id="reviews" class="hidden">
   <header class="site">
     <div class="wrap nav">
-      <div class="brand"><span>BB Car Detailing</span></div>
+      <div class="nav-left">
+        <button class="hamburger" onclick="openMenu()" aria-label="Open menu">☰</button>
+        <div class="brand"><span>BB Car Detailing</span></div>
+      </div>
       <a class="cta" href="#">View site</a>
     </div>
   </header>
@@ -592,6 +636,42 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
 </div><!-- /#reviews -->
 
 
+<!-- ===================== AVAILABILITY PAGE ===================== -->
+<div id="availability" class="hidden">
+  <header class="site">
+    <div class="wrap nav">
+      <div class="nav-left">
+        <button class="hamburger" onclick="openMenu()" aria-label="Open menu">☰</button>
+        <div class="brand"><span>BB Car Detailing</span></div>
+      </div>
+      <a class="cta" href="#book">Book now</a>
+    </div>
+  </header>
+
+  <div class="wrap" style="padding-top:24px; padding-bottom:50px;">
+    <h2 style="margin:0 0 6px">When we're available</h2>
+    <p class="sub">Free start times for a valet, a week at a time. This updates automatically as bookings come in — if you see a time here, it's open.</p>
+
+    <div class="week-nav">
+      <button id="weekPrev" class="week-btn" onclick="weekShift(-7)" aria-label="Previous week">‹</button>
+      <div id="weekLabel" class="week-label"></div>
+      <button id="weekNext" class="week-btn" onclick="weekShift(7)" aria-label="Next week">›</button>
+    </div>
+    <div class="week-jump">
+      <button id="monthPrev" class="btn btn-ghost btn-sm" onclick="weekShift(-28)">‹ Prev month</button>
+      <button id="monthNext" class="btn btn-ghost btn-sm" onclick="weekShift(28)">Next month ›</button>
+    </div>
+
+    <div id="weekGrid" class="week-grid"></div>
+
+    <p class="sub" style="margin:16px 0 0; font-size:13px">Times shown are when a valet can start. Weekdays are evenings; weekends run through the day.</p>
+    <div style="text-align:center; margin-top:18px">
+      <a class="btn btn-primary" href="#book">Book a valet</a>
+    </div>
+  </div>
+</div><!-- /#availability -->
+
+
 <!-- ===================== ADMIN PAGE ===================== -->
 <div id="admin" class="hidden">
   <header class="site">
@@ -622,7 +702,7 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
       <!-- ===== Time off manager ===== -->
       <div class="card" style="margin-bottom:18px">
         <h3 style="margin-top:0">Time off / holidays</h3>
-        <p class="sub" style="margin-bottom:16px">You're both assumed free automatically: <strong>weekdays 4:30pm–7:00pm</strong> (after school) and <strong>weekends 10:00am–6:00pm</strong>. Add any days you're <em>not</em> available below — those days stop being offered to customers. Pick a "from" and "to" date to block several days at once (e.g. a holiday); leave "to" blank for a single day.</p>
+        <p class="sub" style="margin-bottom:16px">You're both assumed free automatically: <strong>weekdays 4:30pm–7:30pm</strong> (after school) and <strong>weekends 10:00am–6:00pm</strong>. Add any days you're <em>not</em> available below — those days stop being offered to customers. Pick a "from" and "to" date to block several days at once (e.g. a holiday); leave "to" blank for a single day.</p>
         <div class="row2">
           <div class="field" style="margin-bottom:12px">
             <label>Who's off</label>
@@ -1083,19 +1163,8 @@ async function loadSlots() {
     return;
   }
 
-  // Group slots by "date|time" so people free at the same time merge to "together".
-  const groups = {};
-  (data.slots || []).forEach(s => {
-    const key = s.slot_date + "|" + s.slot_time;
-    (groups[key] = groups[key] || []).push(s);
-  });
-  slotsByDate = {};
-  Object.keys(groups).sort().forEach(key => {
-    const [date, time] = key.split("|");
-    const people = groups[key].map(s => s.person);
-    const detailer = people.length > 1 ? people.join(" & ") + " (together)" : people[0];
-    (slotsByDate[date] = slotsByDate[date] || []).push({ time, detailer, persons: people, label: `${time} — with ${detailer}` });
-  });
+  // Group slots so people free at the same time merge to "together".
+  slotsByDate = groupSlots(data.slots);
 
   // Constrain the calendar to the bookable window (first → last available day).
   const dates = Object.keys(slotsByDate).sort();
@@ -1530,15 +1599,115 @@ function acceptTerms() {
   document.body.style.overflow = "";
 }
 
+/* ---- Side menu (hamburger) ---- */
+function openMenu() {
+  document.getElementById("sideMenu").classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+}
+function closeMenu() {
+  document.getElementById("sideMenu").classList.add("hidden");
+  document.body.style.overflow = "";
+}
+function closeMenuFromOverlay(e) { if (e.target.id === "sideMenu") closeMenu(); }
+
 /* =====================================================================
-   5. TINY ROUTER — #admin = owner page, #reviews = reviews tab, else site
+   AVAILABILITY CALENDAR (customer view) — weekly, built from open slots.
+   ===================================================================== */
+// Group raw slots ({slot_date, slot_time, person}) by date, merging people free
+// at the same time into one "together" entry. Shared with the booking form.
+function groupSlots(slots) {
+  const groups = {};
+  (slots || []).forEach(s => {
+    const key = s.slot_date + "|" + s.slot_time;
+    (groups[key] = groups[key] || []).push(s);
+  });
+  const byDate = {};
+  Object.keys(groups).sort().forEach(key => {
+    const [date, time] = key.split("|");
+    const people = groups[key].map(s => s.person);
+    const detailer = people.length > 1 ? people.join(" & ") + " (together)" : people[0];
+    (byDate[date] = byDate[date] || []).push({ time, detailer, persons: people, label: `${time} — with ${detailer}` });
+  });
+  return byDate;
+}
+
+// Small date helpers (local time, "YYYY-MM-DD").
+const CAL_DAYNAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+function isoLocal(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }
+function todayIso() { return isoLocal(new Date()); }
+function addDaysIso(iso, n) { const d = new Date(iso + "T00:00:00"); d.setDate(d.getDate() + n); return isoLocal(d); }
+function mondayOf(iso) { const d = new Date(iso + "T00:00:00"); const back = (d.getDay() + 6) % 7; d.setDate(d.getDate() - back); return isoLocal(d); }
+function fmtDM(iso) { return new Date(iso + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" }); }
+
+let availByDate = {};
+let calWeekStart = null;  // Monday (ISO) of the displayed week
+
+async function loadAvailability() {
+  const grid = document.getElementById("weekGrid");
+  const { ok, data } = await api({ action: "slots" });
+  if (!ok) { grid.innerHTML = '<p class="sub">Couldn\'t load availability — please try again, or give us a call.</p>'; return; }
+  availByDate = groupSlots(data.slots);
+  calWeekStart = mondayOf(todayIso());  // always open on the current week
+  renderWeek();
+}
+
+function weekShift(days) {
+  const minStart = mondayOf(todayIso());
+  const maxStart = mondayOf(addDaysIso(todayIso(), 42));  // ~6-week booking horizon
+  let next = addDaysIso(calWeekStart, days);
+  if (next < minStart) next = minStart;
+  if (next > maxStart) next = maxStart;
+  calWeekStart = next;
+  renderWeek();
+}
+
+function renderWeek() {
+  const grid = document.getElementById("weekGrid");
+  const label = document.getElementById("weekLabel");
+  const todayStr = todayIso();
+  const minStart = mondayOf(todayStr);
+  const maxStart = mondayOf(addDaysIso(todayStr, 42));
+  const horizonEnd = addDaysIso(todayStr, 42);
+  const start = calWeekStart;
+  const end = addDaysIso(start, 6);
+
+  label.textContent = `${fmtDM(start)} – ${fmtDM(end)} ${new Date(end + "T00:00:00").getFullYear()}`;
+
+  let html = "";
+  for (let i = 0; i < 7; i++) {
+    const iso = addDaysIso(start, i);
+    const times = availByDate[iso] || [];
+    let body;
+    if (iso < todayStr) body = '<span class="avail-none">—</span>';
+    else if (iso > horizonEnd) body = '<span class="avail-none">Not open for booking yet</span>';
+    else if (!times.length) body = '<span class="avail-none">Fully booked / off</span>';
+    else body = times.map(t => `<span class="avail-chip">${esc(t.time)}</span>`).join("");
+    html += `<div class="avail-row ${iso < todayStr ? "past" : ""} ${iso === todayStr ? "today" : ""}">
+      <div class="avail-day"><span class="dname">${CAL_DAYNAMES[i]}</span><span class="ddate">${fmtDM(iso)}</span></div>
+      <div class="avail-times">${body}</div>
+    </div>`;
+  }
+  grid.innerHTML = html;
+
+  document.getElementById("weekPrev").disabled = start <= minStart;
+  document.getElementById("monthPrev").disabled = start <= minStart;
+  document.getElementById("weekNext").disabled = start >= maxStart;
+  document.getElementById("monthNext").disabled = start >= maxStart;
+}
+
+/* =====================================================================
+   5. TINY ROUTER — #admin owner, #reviews, #availability, else the site
    ===================================================================== */
 function route() {
   const isAdmin = location.hash === "#admin";
   const isReviews = location.hash === "#reviews";
+  const isAvail = location.hash === "#availability";
   document.getElementById("admin").classList.toggle("hidden", !isAdmin);
   document.getElementById("reviews").classList.toggle("hidden", !isReviews);
-  document.getElementById("main").classList.toggle("hidden", isAdmin || isReviews);
+  document.getElementById("availability").classList.toggle("hidden", !isAvail);
+  document.getElementById("main").classList.toggle("hidden", isAdmin || isReviews || isAvail);
+  closeMenu();  // close the side menu after navigating
+  if (isAvail) { window.scrollTo(0, 0); loadAvailability(); }
   if (isAdmin) {
     window.scrollTo(0, 0);
     // If we still have a password from earlier this tab, try to go straight
@@ -1564,8 +1733,8 @@ buildPage();
 route();
 
 // Show the "Please read" terms popup when the site first opens (not on the
-// owner or reviews pages).
-if (location.hash !== "#admin" && location.hash !== "#reviews") showTerms();
+// owner, reviews or availability pages).
+if (!["#admin", "#reviews", "#availability"].includes(location.hash)) showTerms();
 </script>
 
 </body>
