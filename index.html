@@ -3,8 +3,23 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>BB Details — Mobile Car Valeting</title>
-<meta name="description" content="BB Details — professional mobile car valeting. We come to you. Exterior wash, interior clean and full valet." />
+<title>BB Car Detailing — Cleaner. Shinier. Better.</title>
+<meta name="description" content="BB Car Detailing — professional mobile car detailing. We come to you. Exterior wash, interior clean and full valet." />
+
+<!-- Link preview card (shown when the site is shared on Facebook / Instagram /
+     WhatsApp) + home-screen icon. -->
+<meta property="og:type" content="website" />
+<meta property="og:title" content="BB Car Detailing — Cleaner. Shinier. Better." />
+<meta property="og:description" content="Professional mobile car detailing — we come to you. Exterior wash, interior clean and full valet. Book online in minutes." />
+<meta property="og:image" content="https://bobbyparnell0109.github.io/Booking-system/logo.jpg" />
+<meta property="og:url" content="https://bobbyparnell0109.github.io/Booking-system/" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="BB Car Detailing — Cleaner. Shinier. Better." />
+<meta name="twitter:description" content="Professional mobile car detailing — we come to you. Book online in minutes." />
+<meta name="twitter:image" content="https://bobbyparnell0109.github.io/Booking-system/logo.jpg" />
+<meta name="theme-color" content="#0c0c0d" />
+<link rel="icon" href="logo.jpg" />
+<link rel="apple-touch-icon" href="logo.jpg" />
 
 <!-- ===================================================================
      BB DETAILS — single-file car valeting website (LIVE / shared version)
@@ -39,8 +54,8 @@
    To add a service: copy a line in `services` and give it a name + price.
    ===================================================================== */
 const CONFIG = {
-  businessName: "BB Details",
-  tagline: "Showroom-fresh, without leaving your driveway. Mobile valeting that comes to you.",
+  businessName: "BB Car Detailing",
+  tagline: "Cleaner. Shinier. Better. Mobile car detailing that comes to you — without leaving your driveway.",
 
   // Services shown on the page AND in the booking dropdown.
   services: [
@@ -49,13 +64,57 @@ const CONFIG = {
     { id: "full",     label: "Full Valet",     price: 40, blurb: "The lot — inside and out. Our most popular booking." }
   ],
 
+  // "Why choose us" trust points shown under the hero. Edit text/emoji freely.
+  whyUs: [
+    { icon: "🚗", title: "We come to you", text: "Mobile service — we valet on your driveway." },
+    { icon: "🧴", title: "Fully equipped", text: "We bring all our own kit and products." },
+    { icon: "😊", title: "Friendly local lads", text: "Bobby & Bramley, proudly local." },
+    { icon: "✨", title: "Satisfaction guaranteed", text: "We're not happy 'til you are." }
+  ],
+
+  // Special offers banner (loyalty / referral). Leave empty [] to hide it.
+  offers: [
+    { icon: "⭐", text: "Loyalty: every 5th valet is HALF PRICE — we keep count for you." },
+    { icon: "👋", text: "Refer a friend: book and pop their name in \"Referred by\" — you both get £5 off." }
+  ],
+
+  // Frequently asked questions (tap to expand). Add/edit freely.
+  faqs: [
+    { q: "How long does a valet take?", a: "A full valet takes around 2 hours. We'll let you know when we book you in." },
+    { q: "What do you need from me?", a: "Access to an outside water tap, enough room on the driveway to work, and somewhere to park nearby (just up the curb is fine)." },
+    { q: "Do I need to be home?", a: "Not necessarily — as long as we can reach your car, a water tap and have somewhere to park. Just let us know in the notes." },
+    { q: "Do you do vans or bigger vehicles?", a: "Yes! Give us a call or WhatsApp and we'll sort a price for larger vehicles." },
+    { q: "How do I pay?", a: "We take cash or bank transfer." }
+  ],
+
   // Contact numbers shown in the footer. Add, remove or rename people freely
   // — each one becomes a tappable "Call <name>" link.
   contacts: [
     { name: "Bobby",   phone: "07903 512940" },
     { name: "Bramley", phone: "07434 651512" }
   ],
-  facebookUrl: "https://www.facebook.com/",    // EDIT: your Facebook page
+  facebookUrl: "https://www.facebook.com/share/184bo5SHpP/?mibextid=wwXIfr",    // EDIT: your Facebook page
+
+  // WhatsApp number in INTERNATIONAL format (no spaces, no +, UK starts 44).
+  // e.g. 07903 512940  ->  drop the 0, add 44  ->  "447903512940".
+  // Leave as "" to hide the WhatsApp button.
+  whatsapp: "447903512940",
+
+  // NOTE: Reviews are now written by customers on the Reviews tab and stored
+  // online (no longer listed here). The home page shows the best 3 automatically.
+
+  // Your logo. Upload the image file to the repo (same place as this file) and
+  // put its name here, e.g. "logo.png". Leave as "" to show the "BB" text box.
+  logoUrl: "logo.jpg",
+
+  // Before / after photos shown in the swipeable gallery on the home page.
+  // Add one line per pair. Upload each image to the repo and use its name here.
+  // Example:
+  //   { before: "before1.jpg", after: "after1.jpg" },
+  //   { before: "before2.jpg", after: "after2.jpg" },
+  gallery: [
+    // (empty for now — placeholders show until you add pairs above)
+  ],
 
   // The online backend this site talks to (your Supabase project).
   // You normally never need to touch this.
@@ -78,6 +137,7 @@ const CONFIG = {
   --accent-ink:#0c0c0d;
   --ok:        #3ecf8e;
   --danger:    #ff6b6b;
+  --sale:      #ff8a3d;
   --radius:    14px;
   --maxw:      560px;
 }
@@ -99,19 +159,20 @@ header.site {
   border-bottom: 1px solid var(--border);
 }
 .nav { display: flex; align-items: center; justify-content: space-between; height: 60px; }
-.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: 0.2px; }
-.logo {
-  width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center;
-  background: linear-gradient(145deg, #2a2a2e, #131315); border: 1px solid var(--border);
-  font-weight: 800; font-size: 15px; color: var(--text);
-}
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; letter-spacing: 0.2px; }
+.admin-tag { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); border: 1px solid var(--border); padding: 3px 8px; border-radius: 999px; }
 .nav a.cta {
   background: var(--accent); color: var(--accent-ink); text-decoration: none;
   font-weight: 600; font-size: 14px; padding: 9px 16px; border-radius: 999px;
 }
+.nav-actions { display: flex; align-items: center; gap: 14px; }
+.nav a.navlink { text-decoration: none; font-weight: 600; font-size: 14px; color: var(--muted); }
+.nav a.navlink:hover { color: var(--text); }
 
 .hero { padding: 48px 0 36px; text-align: center; }
+.hero .hero-logo { width: 100%; max-width: 360px; height: auto; margin: 0 auto 18px; }
 .hero h1 { font-size: 38px; line-height: 1.05; margin: 0 0 14px; letter-spacing: -0.5px; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .hero .tag { color: var(--muted); font-size: 17px; margin: 0 auto 26px; max-width: 440px; }
 .hero .btn-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 
@@ -124,14 +185,27 @@ header.site {
 .btn-primary { background: var(--accent); color: var(--accent-ink); }
 .btn-ghost { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
 
-.gallery { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 34px; }
+/* Swipeable before/after gallery */
+.carousel {
+  margin-top: 34px; overflow-x: auto; scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch; scrollbar-width: none; border-radius: var(--radius);
+}
+.carousel::-webkit-scrollbar { display: none; }
+.carousel-track { display: flex; }
+.slide { flex: 0 0 100%; scroll-snap-align: center; }
+.slide .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.dots { display: flex; gap: 8px; justify-content: center; margin-top: 14px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); border: none; padding: 0; cursor: pointer; transition: background .2s ease; }
+.dot.active { background: var(--accent); }
+
 .photo {
-  position: relative; aspect-ratio: 4 / 3; border-radius: var(--radius); border: 1px solid var(--border);
+  position: relative; aspect-ratio: 4 / 3; border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden;
   background: repeating-linear-gradient(45deg, #161618 0 12px, #1b1b1f 12px 24px);
   display: grid; place-items: center; color: var(--muted); font-size: 13px; text-align: center; padding: 10px;
 }
+.photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .photo .badge {
-  position: absolute; top: 10px; left: 10px; background: var(--bg); border: 1px solid var(--border);
+  position: absolute; z-index: 2; top: 10px; left: 10px; background: var(--bg); border: 1px solid var(--border);
   font-size: 11px; text-transform: uppercase; letter-spacing: 1px; padding: 4px 10px; border-radius: 999px; color: var(--text);
 }
 
@@ -146,6 +220,60 @@ section .sub { color: var(--muted); margin: 0 0 22px; }
 .service .info h3 { margin: 0 0 4px; font-size: 17px; }
 .service .info p { margin: 0; color: var(--muted); font-size: 14px; }
 .service .price { font-size: 22px; font-weight: 800; white-space: nowrap; }
+/* On sale */
+.service.on-sale { border-color: var(--sale); }
+.sale-badge {
+  display: inline-block; vertical-align: middle; margin-left: 8px;
+  background: var(--sale); color: #1a0e03; font-size: 11px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .5px; padding: 3px 8px; border-radius: 999px;
+}
+.price-was { color: var(--muted); text-decoration: line-through; font-size: 15px; font-weight: 600; margin-right: 8px; }
+.price-now { color: var(--sale); }
+
+/* Customer reviews */
+.review { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 12px; }
+.review .stars { color: #f5c518; font-size: 15px; letter-spacing: 2px; margin-bottom: 8px; }
+.review .text { margin: 0 0 10px; font-size: 15px; }
+.review .who { margin: 0; color: var(--muted); font-size: 13px; font-weight: 600; }
+.review .who .date { color: var(--muted); font-weight: 400; }
+.review .rev-del { float: right; cursor: pointer; font-size: 12px; font-weight: 600; padding: 5px 11px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-2); color: var(--danger); }
+.reviews-empty { background: var(--surface); border: 1px dashed var(--border); border-radius: var(--radius); padding: 26px 20px; text-align: center; color: var(--muted); }
+.reviews-summary { display: flex; align-items: baseline; gap: 10px; margin-bottom: 16px; }
+.reviews-summary .big { font-size: 30px; font-weight: 800; color: var(--text); }
+.reviews-summary .stars { color: #f5c518; font-size: 18px; letter-spacing: 2px; }
+.reviews-more { text-align: center; margin-top: 6px; }
+
+/* Clickable star rating input (write a review) */
+.star-input { display: flex; gap: 6px; font-size: 30px; line-height: 1; cursor: pointer; user-select: none; }
+.star-input span { color: var(--border); transition: color .1s ease; }
+.star-input span.on { color: #f5c518; }
+
+/* "Why choose us" strip */
+.why-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.why-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+.why-item .icon { font-size: 24px; line-height: 1; margin-bottom: 8px; }
+.why-item h3 { margin: 0 0 4px; font-size: 15px; }
+.why-item p { margin: 0; color: var(--muted); font-size: 13px; }
+@media (min-width: 620px) { .why-grid { grid-template-columns: repeat(4, 1fr); } }
+
+/* Offers banner (loyalty / referral) */
+.offers { background: linear-gradient(135deg, rgba(232,232,234,0.08), rgba(255,138,61,0.10)); border: 1px solid var(--sale); border-radius: var(--radius); padding: 18px 20px; }
+.offers h2 { font-size: 18px; margin: 0 0 10px; }
+.offer-line { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; margin-bottom: 8px; }
+.offer-line:last-child { margin-bottom: 0; }
+.offer-line .icon { font-size: 18px; line-height: 1.4; }
+
+/* FAQ accordion */
+.faq { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 10px; overflow: hidden; }
+.faq summary { cursor: pointer; padding: 15px 18px; font-weight: 600; font-size: 15px; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: "+"; color: var(--muted); font-size: 20px; font-weight: 400; }
+.faq[open] summary::after { content: "−"; }
+.faq .ans { padding: 0 18px 16px; color: var(--muted); font-size: 14px; }
+
+/* WhatsApp button (green, sits with the call links) */
+.btn-whatsapp { background: #25d366; color: #04130b; }
+.wa-svg { width: 18px; height: 18px; vertical-align: -3px; margin-right: 7px; fill: currentColor; }
 
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; }
 .field { margin-bottom: 16px; }
@@ -157,6 +285,11 @@ section .sub { color: var(--muted); margin: 0 0 22px; }
 }
 .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--accent); }
 .field textarea { resize: vertical; min-height: 80px; }
+/* Normalise the native date input so it matches the other fields (iOS Safari
+   otherwise renders it wider, taller and centre-aligned). */
+.field input[type="date"] { -webkit-appearance: none; appearance: none; text-align: left; }
+.field input[type="date"]::-webkit-date-and-time-value { text-align: left; margin: 0; }
+.field input[type="date"]::-webkit-calendar-picker-indicator { margin: 0 0 0 auto; }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .btn-full { width: 100%; text-align: center; }
 .form-error { color: var(--danger); font-size: 14px; margin: 12px 0 0; }
@@ -168,6 +301,23 @@ section .sub { color: var(--muted); margin: 0 0 22px; }
 .slot-row .slot-del { cursor: pointer; font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-2); color: var(--danger); }
 .slot-day { margin: 16px 0 4px; font-size: 13px; font-weight: 700; color: var(--muted); }
 
+/* Time-off calendar in the owner page */
+.cal-wrap { margin-top: 12px; max-height: 380px; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px 12px; }
+.cal-month { margin-top: 16px; }
+.cal-month:first-child { margin-top: 4px; }
+.cal-title { font-size: 13px; font-weight: 700; color: var(--text); margin: 0 0 8px; text-align: center; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-head { font-size: 10px; color: var(--muted); text-align: center; padding: 2px 0; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
+.cal-day { aspect-ratio: 1 / 1; display: grid; place-items: center; font-size: 12px; border-radius: 7px; background: var(--surface-2); color: var(--text); }
+.cal-day.empty { background: transparent; }
+.cal-day.past { opacity: 0.4; }
+.cal-off-bobby { background: #2f5bd0; color: #fff; }    /* Bobby off  → blue   */
+.cal-off-bramley { background: #c0392b; color: #fff; }  /* Bramley off → red    */
+.cal-off-both { background: #7d3cc0; color: #fff; }     /* both off   → purple */
+.cal-legend { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 10px; font-size: 12px; color: var(--muted); }
+.cal-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.cal-swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; border: 1px solid var(--border); }
+
 .confirm {
   background: rgba(62,207,142,0.08); border: 1px solid rgba(62,207,142,0.4); color: var(--text);
   border-radius: var(--radius); padding: 20px; text-align: center;
@@ -177,6 +327,29 @@ section .sub { color: var(--muted); margin: 0 0 22px; }
   color: #04130b; display: grid; place-items: center; font-size: 24px; font-weight: 800;
 }
 .hidden { display: none !important; }
+
+/* "Please read" terms popup */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.72);
+  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+  display: grid; place-items: center; padding: 20px; overflow-y: auto;
+}
+.modal {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  width: 100%; max-width: 460px; padding: 26px 24px; margin: auto;
+}
+.modal h2 {
+  margin: 0 0 14px; font-size: 22px; letter-spacing: 1px; text-transform: uppercase;
+}
+.modal p { margin: 0 0 14px; color: var(--muted); font-size: 15px; }
+.terms-list { margin: 0 0 22px; padding-left: 20px; }
+.terms-list li { margin-bottom: 12px; font-size: 14px; line-height: 1.5; }
+.terms-list strong { color: var(--text); }
+
+/* Agree-to-terms checkbox by the booking button */
+.terms-check label { display: flex; align-items: center; gap: 10px; color: var(--text); font-size: 14px; font-weight: 500; cursor: pointer; }
+.terms-check input[type="checkbox"] { width: 20px; height: 20px; flex: 0 0 auto; accent-color: var(--accent); }
+.terms-check a { color: var(--accent); text-decoration: underline; font-weight: 600; }
 
 footer.site { border-top: 1px solid var(--border); padding: 32px 0 40px; text-align: center; color: var(--muted); font-size: 14px; }
 footer.site a { color: var(--text); text-decoration: none; font-weight: 600; }
@@ -196,6 +369,39 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
 .booking .actions .done-btn { color: var(--ok); }
 .booking .actions .del-btn { color: var(--danger); }
 .tag-done { color: var(--ok); font-size: 12px; font-weight: 700; }
+.loyalty { display: inline-block; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); color: var(--muted); }
+.loyalty.milestone { background: var(--sale); border-color: var(--sale); color: #1a0e03; }
+
+/* Hamburger + slide-in side menu */
+.nav-left { display: flex; align-items: center; gap: 8px; }
+.hamburger { background: none; border: none; color: var(--text); font-size: 22px; line-height: 1; cursor: pointer; padding: 6px 8px; border-radius: 8px; }
+.hamburger:hover { background: var(--surface-2); }
+.drawer-overlay { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.55); }
+.drawer { position: absolute; top: 0; left: 0; height: 100%; width: 80%; max-width: 300px; background: var(--surface); border-right: 1px solid var(--border); box-shadow: 2px 0 24px rgba(0,0,0,0.45); padding: 18px 16px; display: flex; flex-direction: column; gap: 4px; }
+.drawer-close { align-self: flex-end; background: none; border: none; color: var(--muted); font-size: 22px; cursor: pointer; padding: 4px 8px; }
+.drawer-brand { font-weight: 700; font-size: 16px; margin: 0 8px 10px; }
+.drawer a { display: block; padding: 13px 12px; border-radius: 10px; text-decoration: none; color: var(--text); font-weight: 600; font-size: 16px; }
+.drawer a:hover { background: var(--surface-2); }
+.drawer a.book { background: var(--accent); color: var(--accent-ink); text-align: center; margin-top: 8px; }
+
+/* Weekly availability calendar (customer-facing) */
+.week-nav { display: flex; align-items: center; gap: 10px; margin: 16px 0 10px; }
+.week-label { flex: 1; text-align: center; font-weight: 700; font-size: 15px; }
+.week-btn { background: var(--surface-2); border: 1px solid var(--border); color: var(--text); font-size: 20px; width: 44px; height: 44px; border-radius: 10px; cursor: pointer; flex: 0 0 auto; }
+.week-btn:disabled { opacity: .35; cursor: default; }
+.week-jump { display: flex; gap: 10px; justify-content: center; margin-bottom: 16px; }
+.btn-sm { padding: 8px 14px; font-size: 13px; }
+.week-grid { display: flex; flex-direction: column; gap: 8px; }
+.avail-row { display: flex; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
+.avail-row.past { opacity: .45; }
+.avail-row.today { border-color: var(--accent); }
+.avail-day { flex: 0 0 58px; }
+.avail-day .dname { display: block; font-weight: 700; font-size: 14px; }
+.avail-day .ddate { display: block; color: var(--muted); font-size: 12px; }
+.avail-times { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.avail-chip { background: rgba(62,207,142,0.10); border: 1px solid rgba(62,207,142,0.4); color: var(--ok); border-radius: 999px; padding: 5px 11px; font-size: 13px; font-weight: 700; cursor: pointer; }
+.avail-chip:hover, .avail-chip:focus { background: rgba(62,207,142,0.25); outline: none; }
+.avail-none { color: var(--muted); font-size: 13px; }
 
 @media (min-width: 620px) { .hero h1 { font-size: 46px; } }
 </style>
@@ -203,14 +409,41 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
 
 <body>
 
+<!-- ===================== TERMS POPUP ===================== -->
+<!-- Shown automatically when the site opens, and again if the customer taps
+     the "terms" link by the booking button. -->
+<div id="termsModal" class="modal-overlay hidden">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="termsTitle">
+    <h2 id="termsTitle">Please read</h2>
+    <p>Before we arrive, please make sure of a few things so we can give your car the best clean:</p>
+    <ul class="terms-list">
+      <li><strong>Water supply</strong> — while we detail, we'll need access to the house owner's water supply (an outside tap).</li>
+      <li><strong>Room to work</strong> — there must be enough room for us to detail properly on your driveway. If there isn't, we'll need to arrange a better spot with a water supply available to detail.</li>
+      <li><strong>Parking</strong> — there must be a suitable place for us to park somewhere near the house we're detailing at, which can include just up the curb.</li>
+    </ul>
+    <button class="btn btn-primary btn-full" onclick="acceptTerms()">I accept these terms</button>
+  </div>
+</div>
+
+<!-- ===================== SIDE MENU (shared) ===================== -->
+<div id="sideMenu" class="drawer-overlay hidden" onclick="closeMenuFromOverlay(event)">
+  <nav class="drawer" aria-label="Menu">
+    <button class="drawer-close" onclick="closeMenu()" aria-label="Close menu">✕</button>
+    <p class="drawer-brand">BB Car Detailing</p>
+    <a href="#" onclick="closeMenu()">🏠 Home</a>
+    <a href="#availability" onclick="closeMenu()">📅 Availability</a>
+    <a href="#reviews" onclick="closeMenu()">⭐ Reviews</a>
+    <a class="book" href="#book" onclick="closeMenu()">Book a valet</a>
+  </nav>
+</div>
+
 <!-- ===================== PUBLIC SITE ===================== -->
 <div id="main">
   <header class="site">
     <div class="wrap nav">
-      <div class="brand">
-        <!-- Logo placeholder: swap this <div> for <img src="logo.png"> -->
-        <div class="logo">BB</div>
-        <span id="brandName">BB Details</span>
+      <div class="nav-left">
+        <button class="hamburger" onclick="openMenu()" aria-label="Open menu">☰</button>
+        <div class="brand"><span id="brandName">BB Car Detailing</span></div>
       </div>
       <a class="cta" href="#book">Book now</a>
     </div>
@@ -218,23 +451,49 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
 
   <div class="wrap">
     <section class="hero" style="border-top:none">
-      <h1 id="heroName">BB Details</h1>
+      <img id="heroLogo" class="hero-logo hidden" alt="" />
+      <h1 id="heroName">BB Car Detailing</h1>
       <p class="tag" id="heroTag"></p>
       <div class="btn-row">
         <a class="btn btn-primary" href="#book">Book a valet</a>
         <a class="btn btn-ghost" href="#services">See prices</a>
+        <a class="btn btn-whatsapp hidden" id="waBtn" target="_blank" rel="noopener"></a>
       </div>
-      <!-- Before / after photo placeholders. Replace each .photo with an <img>. -->
-      <div class="gallery">
-        <div class="photo"><span class="badge">Before</span>Add your<br>"before" photo</div>
-        <div class="photo"><span class="badge">After</span>Add your<br>"after" photo</div>
-      </div>
+      <!-- Swipeable before/after gallery — built from CONFIG.gallery in JS. -->
+      <div class="carousel" id="gallery"><div class="carousel-track" id="galleryTrack"></div></div>
+      <div class="dots" id="galleryDots"></div>
+    </section>
+
+    <section id="whyUs" class="hidden">
+      <div class="why-grid" id="whyGrid"></div>
     </section>
 
     <section id="services">
       <h2>Services &amp; pricing</h2>
       <p class="sub">Simple, honest pricing. We bring everything we need.</p>
       <div id="serviceList"></div>
+    </section>
+
+    <section id="offers" class="hidden">
+      <div class="offers">
+        <h2>Special offers</h2>
+        <div id="offerList"></div>
+      </div>
+    </section>
+
+    <section id="reviewsHome">
+      <h2>What our customers say</h2>
+      <p class="sub">Don't just take our word for it.</p>
+      <div id="reviewList"></div>
+      <div class="reviews-more">
+        <a class="btn btn-ghost" href="#reviews">Read &amp; write reviews</a>
+      </div>
+    </section>
+
+    <section id="faq" class="hidden">
+      <h2>Frequently asked questions</h2>
+      <p class="sub">Anything else? Give us a call or WhatsApp.</p>
+      <div id="faqList"></div>
     </section>
 
     <section id="book">
@@ -249,7 +508,7 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
         <div class="row2">
           <div class="field">
             <label>Phone <span class="req">*</span></label>
-            <input type="tel" name="phone" autocomplete="tel" required />
+            <input type="tel" name="phone" autocomplete="tel" inputmode="tel" placeholder="07903 512940 — no +44 needed" required />
           </div>
           <div class="field">
             <label>Email <span class="req">*</span></label>
@@ -263,12 +522,16 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
           </select>
         </div>
         <div class="field">
-          <label>Available time <span class="req">*</span></label>
-          <select name="slot" id="slotSelect" required>
-            <option value="" disabled selected>Loading available times…</option>
-          </select>
-          <p id="slotHint" class="form-hint"></p>
+          <label>Date <span class="req">*</span></label>
+          <input type="date" name="date" id="dateSelect" required />
         </div>
+        <div class="field">
+          <label>Time <span class="req">*</span></label>
+          <select name="slot" id="slotSelect" required disabled>
+            <option value="" disabled selected>Choose a date first…</option>
+          </select>
+        </div>
+        <p id="slotHint" class="form-hint"></p>
         <div class="field">
           <label>Car make &amp; model <span class="req">*</span></label>
           <input type="text" name="car" placeholder="e.g. Ford Fiesta" required />
@@ -280,6 +543,16 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
         <div class="field">
           <label>Notes (optional)</label>
           <textarea name="notes" placeholder="Anything we should know? Pet hair, parking, etc."></textarea>
+        </div>
+        <div class="field">
+          <label>Referred by a friend? (optional)</label>
+          <input type="text" name="referred_by" placeholder="Their name — you both get £5 off" maxlength="80" />
+        </div>
+        <div class="field terms-check">
+          <label>
+            <input type="checkbox" name="terms" id="termsAgree" required />
+            <span>I agree to our <a href="#" onclick="showTerms(event)">terms</a></span>
+          </label>
         </div>
         <button type="submit" id="submitBtn" class="btn btn-primary btn-full">Request booking</button>
         <p id="formError" class="form-error hidden"></p>
@@ -297,21 +570,114 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
   <footer class="site">
     <div class="wrap">
       <div class="links" id="footerLinks">
+        <a href="#availability">Availability</a>
+        <a href="#reviews">Reviews</a>
         <a id="fbLink" href="#" target="_blank" rel="noopener">Facebook</a>
         <!-- "Call <name>" links are added here automatically from CONFIG.contacts -->
       </div>
-      <p>&copy; <span id="year"></span> BB Details · Mobile car valeting</p>
+      <p>&copy; <span id="year"></span> BB Car Detailing · Mobile car detailing</p>
       <p><a class="admin-link" href="#admin">Owner login</a></p>
     </div>
   </footer>
 </div><!-- /#main -->
 
 
+<!-- ===================== REVIEWS PAGE ===================== -->
+<div id="reviews" class="hidden">
+  <header class="site">
+    <div class="wrap nav">
+      <div class="nav-left">
+        <button class="hamburger" onclick="openMenu()" aria-label="Open menu">☰</button>
+        <div class="brand"><span>BB Car Detailing</span></div>
+      </div>
+      <a class="cta" href="#">View site</a>
+    </div>
+  </header>
+
+  <div class="wrap" style="padding-top:30px; padding-bottom:50px;">
+    <h2 style="margin:0 0 6px">Reviews</h2>
+    <p class="sub">See what customers think — and leave your own.</p>
+
+    <!-- Write a review -->
+    <form id="reviewForm" class="card" novalidate style="margin-bottom:26px">
+      <h3 style="margin-top:0">Leave a review</h3>
+      <div class="field">
+        <label>Your name <span class="req">*</span></label>
+        <input type="text" name="rname" autocomplete="name" maxlength="60" required />
+      </div>
+      <div class="field">
+        <label>Your rating <span class="req">*</span></label>
+        <div class="star-input" id="starInput" role="radiogroup" aria-label="Star rating">
+          <span data-v="1" role="radio" aria-label="1 star">★</span>
+          <span data-v="2" role="radio" aria-label="2 stars">★</span>
+          <span data-v="3" role="radio" aria-label="3 stars">★</span>
+          <span data-v="4" role="radio" aria-label="4 stars">★</span>
+          <span data-v="5" role="radio" aria-label="5 stars">★</span>
+        </div>
+        <input type="hidden" name="rstars" id="reviewStars" value="0" />
+      </div>
+      <div class="field">
+        <label>Your review <span class="req">*</span></label>
+        <textarea name="rtext" maxlength="600" placeholder="How did we do?" required></textarea>
+      </div>
+      <button type="submit" id="reviewSubmit" class="btn btn-primary btn-full">Post review</button>
+      <p id="reviewError" class="form-error hidden"></p>
+    </form>
+
+    <div id="reviewThanks" class="confirm hidden" style="margin-bottom:26px">
+      <div class="tick">✓</div>
+      <h3 style="margin:0 0 6px">Thanks for your review!</h3>
+      <p style="margin:0;color:var(--muted)">It's now live on the site.</p>
+    </div>
+
+    <!-- All reviews -->
+    <div id="reviewsSummary"></div>
+    <div id="allReviews"></div>
+  </div>
+</div><!-- /#reviews -->
+
+
+<!-- ===================== AVAILABILITY PAGE ===================== -->
+<div id="availability" class="hidden">
+  <header class="site">
+    <div class="wrap nav">
+      <div class="nav-left">
+        <button class="hamburger" onclick="openMenu()" aria-label="Open menu">☰</button>
+        <div class="brand"><span>BB Car Detailing</span></div>
+      </div>
+      <a class="cta" href="#book">Book now</a>
+    </div>
+  </header>
+
+  <div class="wrap" style="padding-top:24px; padding-bottom:50px;">
+    <h2 style="margin:0 0 6px">When we're available</h2>
+    <p class="sub">Free start times for a valet, a week at a time. This updates automatically as bookings come in — if you see a time here, it's open.</p>
+
+    <div class="week-nav">
+      <button id="weekPrev" class="week-btn" onclick="weekShift(-7)" aria-label="Previous week">‹</button>
+      <div id="weekLabel" class="week-label"></div>
+      <button id="weekNext" class="week-btn" onclick="weekShift(7)" aria-label="Next week">›</button>
+    </div>
+    <div class="week-jump">
+      <button id="monthPrev" class="btn btn-ghost btn-sm" onclick="weekShift(-28)">‹ Prev month</button>
+      <button id="monthNext" class="btn btn-ghost btn-sm" onclick="weekShift(28)">Next month ›</button>
+    </div>
+
+    <div id="weekGrid" class="week-grid"></div>
+
+    <p class="sub" style="margin:16px 0 0; font-size:13px">Times shown are when a valet can start. Weekdays are evenings; weekends run through the day.</p>
+    <div style="text-align:center; margin-top:18px">
+      <a class="btn btn-primary" href="#book">Book a valet</a>
+    </div>
+  </div>
+</div><!-- /#availability -->
+
+
 <!-- ===================== ADMIN PAGE ===================== -->
 <div id="admin" class="hidden">
   <header class="site">
     <div class="wrap nav">
-      <div class="brand"><div class="logo">BB</div><span>Admin</span></div>
+      <div class="brand"><span id="adminBrandName">BB Car Detailing</span><span class="admin-tag">Admin</span></div>
       <a class="cta" href="#">View site</a>
     </div>
   </header>
@@ -334,33 +700,71 @@ footer.site .admin-link { font-size: 12px; color: var(--muted); text-decoration:
         <button class="btn btn-ghost" style="padding:8px 14px;font-size:13px" onclick="lockAdmin()">Lock</button>
       </div>
 
-      <!-- ===== Availability manager ===== -->
+      <!-- ===== Time off manager ===== -->
       <div class="card" style="margin-bottom:18px">
-        <h3 style="margin-top:0">Your free times</h3>
-        <p class="sub" style="margin-bottom:16px">Add the hours you're each free on a day (e.g. 09:00 to 17:00). Customers can pick a start time every 30 minutes, and each job lasts 2½ hours. When a time is booked, every start time that would clash with that 2½-hour job is removed automatically. If you're both free at a time, it's offered as "together".</p>
+        <h3 style="margin-top:0">Time off / holidays</h3>
+        <p class="sub" style="margin-bottom:16px">You're both assumed free automatically: <strong>weekdays 4:30pm–7:30pm</strong> (after school) and <strong>weekends 10:00am–6:00pm</strong>. Add any days you're <em>not</em> available below — those days stop being offered to customers. Pick a "from" and "to" date to block several days at once (e.g. a holiday); leave "to" blank for a single day.</p>
         <div class="row2">
           <div class="field" style="margin-bottom:12px">
-            <label>Who's free</label>
-            <select id="slotPerson"></select>
+            <label>Who's off</label>
+            <select id="offPerson"></select>
           </div>
           <div class="field" style="margin-bottom:12px">
-            <label>Date</label>
-            <input type="date" id="slotDate" />
+            <label>From date</label>
+            <input type="date" id="offStart" />
           </div>
         </div>
+        <div class="field" style="margin-bottom:12px">
+          <label>To date <span style="font-weight:400">(optional — leave blank for one day)</span></label>
+          <input type="date" id="offEnd" />
+        </div>
+        <button class="btn btn-primary btn-full" id="addOffBtn" onclick="addTimeOff()">Add time off</button>
+        <p id="offMsg" class="form-hint"></p>
+
+        <div style="border-top:1px solid var(--border); margin-top:18px; padding-top:16px">
+          <h4 style="margin:0 0 2px; font-size:15px">Your calendar</h4>
+          <div class="cal-legend">
+            <span><span class="cal-swatch" style="background:#2f5bd0"></span>Bobby off</span>
+            <span><span class="cal-swatch" style="background:#c0392b"></span>Bramley off</span>
+            <span><span class="cal-swatch" style="background:#7d3cc0"></span>Both off</span>
+            <span><span class="cal-swatch" style="background:var(--surface-2)"></span>Both free</span>
+          </div>
+          <div class="cal-wrap" id="offCalendar"></div>
+        </div>
+
+        <h4 style="margin:18px 0 0; font-size:15px">Booked time off</h4>
+        <div id="offList" style="margin-top:8px"></div>
+      </div>
+
+      <!-- ===== Discounts / sales ===== -->
+      <div class="card" style="margin-bottom:18px">
+        <h3 style="margin-top:0">Discounts / sales</h3>
+        <p class="sub" style="margin-bottom:16px">Put a service on sale. Pick the service and how much off — the main page shows the old price crossed out, the new price, and a "% off" badge. Remove it any time to go back to full price.</p>
         <div class="row2">
           <div class="field" style="margin-bottom:12px">
-            <label>Free from</label>
-            <input type="time" id="slotStart" />
+            <label>Service</label>
+            <select id="discService"></select>
           </div>
           <div class="field" style="margin-bottom:12px">
-            <label>Free until</label>
-            <input type="time" id="slotEnd" />
+            <label>Percent off (%)</label>
+            <input type="number" id="discPercent" min="1" max="95" inputmode="numeric" placeholder="e.g. 20" />
           </div>
         </div>
-        <button class="btn btn-primary btn-full" id="addSlotBtn" onclick="addRange()">Add availability</button>
-        <p id="slotMsg" class="form-hint"></p>
-        <div id="slotList" style="margin-top:10px"></div>
+        <button class="btn btn-primary btn-full" id="addDiscBtn" onclick="setDiscount()">Put on sale</button>
+        <p id="discMsg" class="form-hint"></p>
+
+        <h4 style="margin:18px 0 0; font-size:15px">Current sales</h4>
+        <div id="discList" style="margin-top:8px"></div>
+      </div>
+
+      <!-- ===== Reviews moderation ===== -->
+      <div class="card" style="margin-bottom:18px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h3 style="margin:0">Reviews</h3>
+          <button class="btn btn-ghost" style="padding:8px 14px;font-size:13px" onclick="loadReviewsAdmin()">Refresh</button>
+        </div>
+        <p class="sub" style="margin:6px 0 12px">Customers post these on the Reviews tab. Delete any you don't want shown.</p>
+        <div id="adminReviewList"></div>
       </div>
 
       <!-- ===== Bookings ===== -->
@@ -393,7 +797,58 @@ async function api(payload) {
 }
 
 function serviceById(id) { return CONFIG.services.find(s => s.id === id); }
-function money(n) { return "£" + n; }
+function money(n) {
+  const r = Math.round(Number(n) * 100) / 100;
+  return "£" + (Number.isInteger(r) ? r : r.toFixed(2));
+}
+
+/* Current sales, fetched from the backend: { service_id: percent_off }.
+   effectivePrice() turns a service into its before/after price + percent. */
+let discounts = {};
+function effectivePrice(s) {
+  const pct = discounts[s.id] || 0;
+  const now = pct ? Math.round(s.price * (100 - pct)) / 100 : s.price;
+  return { pct, was: s.price, now };
+}
+
+/* ---- "Why choose us" strip, offers banner, FAQ (all config-driven) ---- */
+function renderWhyUs() {
+  const sec = document.getElementById("whyUs");
+  const grid = document.getElementById("whyGrid");
+  const items = CONFIG.whyUs || [];
+  if (!grid) return;
+  if (!items.length) { sec.classList.add("hidden"); return; }
+  sec.classList.remove("hidden");
+  grid.innerHTML = items.map(w => `
+    <div class="why-item">
+      <div class="icon">${esc(w.icon || "")}</div>
+      <h3>${esc(w.title)}</h3>
+      <p>${esc(w.text)}</p>
+    </div>`).join("");
+}
+function renderOffers() {
+  const sec = document.getElementById("offers");
+  const list = document.getElementById("offerList");
+  const offers = CONFIG.offers || [];
+  if (!list) return;
+  if (!offers.length) { sec.classList.add("hidden"); return; }
+  sec.classList.remove("hidden");
+  list.innerHTML = offers.map(o => `
+    <div class="offer-line"><span class="icon">${esc(o.icon || "🎉")}</span><span>${esc(o.text)}</span></div>`).join("");
+}
+function renderFaqs() {
+  const sec = document.getElementById("faq");
+  const list = document.getElementById("faqList");
+  const faqs = CONFIG.faqs || [];
+  if (!list) return;
+  if (!faqs.length) { sec.classList.add("hidden"); return; }
+  sec.classList.remove("hidden");
+  list.innerHTML = faqs.map(f => `
+    <details class="faq">
+      <summary>${esc(f.q)}</summary>
+      <div class="ans">${esc(f.a)}</div>
+    </details>`).join("");
+}
 
 /* =====================================================================
    1. POPULATE THE PAGE FROM CONFIG
@@ -402,23 +857,40 @@ function buildPage() {
   document.getElementById("brandName").textContent = CONFIG.businessName;
   document.getElementById("heroName").textContent  = CONFIG.businessName;
   document.getElementById("heroTag").textContent   = CONFIG.tagline;
-  document.title = CONFIG.businessName + " — Mobile Car Valeting";
+  document.title = CONFIG.businessName + " — Cleaner. Shinier. Better.";
 
-  document.getElementById("serviceList").innerHTML = CONFIG.services.map(s => `
-    <div class="service">
-      <div class="info"><h3>${s.label}</h3><p>${s.blurb}</p></div>
-      <div class="price">${money(s.price)}</div>
-    </div>`).join("");
-
-  const sel = document.querySelector('select[name="service"]');
-  CONFIG.services.forEach(s => {
-    const opt = document.createElement("option");
-    opt.value = s.id;
-    opt.textContent = `${s.label} — ${money(s.price)}`;
-    sel.appendChild(opt);
-  });
+  renderServices();
+  renderServiceOptions();
 
   document.getElementById("fbLink").href = CONFIG.facebookUrl;
+
+  // Reviews + WhatsApp button.
+  loadReviews();
+  setupStarInput();
+  setupWhatsApp();
+
+  // Why-us strip, offers banner, FAQ.
+  renderWhyUs();
+  renderOffers();
+  renderFaqs();
+
+  // The sticky header and owner bar use clean text branding (the wide wordmark
+  // logo looks cramped/clipped when shrunk into a small bar).
+  const adminBrand = document.getElementById("adminBrandName");
+  if (adminBrand) adminBrand.textContent = CONFIG.businessName;
+
+  // Logo: if one is set, feature it large in the hero only (keep the H1 text
+  // for SEO/screen readers by hiding it visually rather than removing it).
+  if (CONFIG.logoUrl) {
+    const heroLogo = document.getElementById("heroLogo");
+    heroLogo.src = CONFIG.logoUrl;
+    heroLogo.alt = CONFIG.businessName;
+    heroLogo.classList.remove("hidden");
+    document.getElementById("heroName").classList.add("visually-hidden");
+  }
+
+  // Build the before/after gallery.
+  renderGallery();
 
   // Add a tappable "Call <name>: <number>" link for each contact.
   const footerLinks = document.getElementById("footerLinks");
@@ -433,41 +905,306 @@ function buildPage() {
 
   // Fill the booking dropdown with the owners' open times.
   loadSlots();
+  // Pull any current sales and re-render prices with them.
+  loadPublicDiscounts();
 }
 
-/* ---- Build the customer's "Available time" dropdown ----
-   Open slots are grouped by date+time. If more than one person is free at
-   the same time, they're combined into one "together" option. */
-let slotOptions = [];  // each: { date, time, detailer, ids[], label }
+/* ---- Services list + booking dropdown (re-rendered when sales change) ---- */
+function renderServices() {
+  document.getElementById("serviceList").innerHTML = CONFIG.services.map(s => {
+    const { pct, was, now } = effectivePrice(s);
+    const priceHtml = pct
+      ? `<span class="price-was">${money(was)}</span><span class="price-now">${money(now)}</span>`
+      : money(was);
+    return `
+    <div class="service ${pct ? "on-sale" : ""}">
+      <div class="info">
+        <h3>${s.label}${pct ? ` <span class="sale-badge">${pct}% off</span>` : ""}</h3>
+        <p>${s.blurb}</p>
+      </div>
+      <div class="price">${priceHtml}</div>
+    </div>`;
+  }).join("");
+}
+
+function renderServiceOptions() {
+  const sel = document.querySelector('select[name="service"]');
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="" disabled selected>Choose a service…</option>';
+  CONFIG.services.forEach(s => {
+    const { pct, now } = effectivePrice(s);
+    const opt = document.createElement("option");
+    opt.value = s.id;
+    opt.textContent = pct
+      ? `${s.label} — ${money(now)} (${pct}% off)`
+      : `${s.label} — ${money(s.price)}`;
+    sel.appendChild(opt);
+  });
+  if (current) sel.value = current;  // keep the customer's choice across a re-render
+}
+
+// Fetch current sales (public) and refresh the prices shown on the page.
+async function loadPublicDiscounts() {
+  const { ok, data } = await api({ action: "discounts" });
+  if (!ok) return;
+  discounts = {};
+  (data.discounts || []).forEach(d => { discounts[d.service_id] = d.percent; });
+  renderServices();
+  renderServiceOptions();
+}
+
+/* =====================================================================
+   CUSTOMER REVIEWS — written by customers, stored online.
+   Home page shows the best 3; the Reviews tab shows all + a write form.
+   ===================================================================== */
+let reviewsAll = [];  // server returns them best-first (stars desc, then newest)
+
+function starStr(n) {
+  n = Math.max(0, Math.min(5, Math.round(n || 0)));
+  return "★".repeat(n) + "☆".repeat(5 - n);
+}
+function reviewCard(r, withDate) {
+  const date = withDate && r.created_at ? ` <span class="date">· ${formatDate((r.created_at || "").split("T")[0])}</span>` : "";
+  return `
+    <div class="review">
+      <div class="stars" aria-label="${r.stars} out of 5 stars">${starStr(r.stars)}</div>
+      <p class="text">${esc(r.text)}</p>
+      <p class="who">— ${esc(r.name)}${date}</p>
+    </div>`;
+}
+
+async function loadReviews() {
+  const { ok, data } = await api({ action: "list_reviews" });
+  if (!ok) return;
+  reviewsAll = data.reviews || [];
+  renderHomeReviews();
+  renderAllReviews();
+}
+
+// Home page: best 3 (or a friendly empty state).
+function renderHomeReviews() {
+  const list = document.getElementById("reviewList");
+  const moreLink = document.querySelector("#reviewsHome .reviews-more a");
+  if (!list) return;
+  if (!reviewsAll.length) {
+    list.innerHTML = `<div class="reviews-empty">No reviews yet — be the first to leave one!</div>`;
+    if (moreLink) moreLink.textContent = "Write a review";
+    return;
+  }
+  list.innerHTML = reviewsAll.slice(0, 3).map(r => reviewCard(r)).join("");
+  if (moreLink) moreLink.textContent =
+    reviewsAll.length > 3 ? `Read all ${reviewsAll.length} reviews` : "Read & write reviews";
+}
+
+// Reviews tab: average summary + every review.
+function renderAllReviews() {
+  const box = document.getElementById("allReviews");
+  const sum = document.getElementById("reviewsSummary");
+  if (!box) return;
+  if (!reviewsAll.length) {
+    if (sum) sum.innerHTML = "";
+    box.innerHTML = `<div class="reviews-empty">No reviews yet — be the first to leave one above!</div>`;
+    return;
+  }
+  const avg = reviewsAll.reduce((a, r) => a + (r.stars || 0), 0) / reviewsAll.length;
+  if (sum) sum.innerHTML = `<div class="reviews-summary">
+    <span class="big">${avg.toFixed(1)}</span>
+    <span class="stars">${starStr(avg)}</span>
+    <span class="sub" style="margin:0">${reviewsAll.length} review${reviewsAll.length > 1 ? "s" : ""}</span>
+  </div>`;
+  box.innerHTML = reviewsAll.map(r => reviewCard(r, true)).join("");
+}
+
+// Clickable star rating widget on the write-a-review form.
+function setupStarInput() {
+  const wrap = document.getElementById("starInput");
+  const hidden = document.getElementById("reviewStars");
+  if (!wrap || !hidden) return;
+  const stars = [...wrap.querySelectorAll("span")];
+  const paint = n => stars.forEach(s => s.classList.toggle("on", Number(s.dataset.v) <= n));
+  stars.forEach(s => s.addEventListener("click", () => { hidden.value = s.dataset.v; paint(Number(s.dataset.v)); }));
+}
+
+// Submit a new review.
+document.getElementById("reviewForm").addEventListener("submit", async function (e) {
+  e.preventDefault();
+  const name = this.rname.value.trim();
+  const stars = Number(document.getElementById("reviewStars").value);
+  const text = this.rtext.value.trim();
+  const err = document.getElementById("reviewError");
+  err.classList.add("hidden");
+  if (!name || !text || !stars) {
+    err.textContent = "Please add your name, a star rating and a review.";
+    err.classList.remove("hidden");
+    return;
+  }
+  const btn = document.getElementById("reviewSubmit");
+  btn.disabled = true; btn.textContent = "Posting…";
+  try {
+    const { ok } = await api({ action: "add_review", review: { name, stars, text } });
+    if (!ok) throw new Error();
+    this.reset();
+    document.getElementById("reviewStars").value = "0";
+    [...document.querySelectorAll("#starInput span")].forEach(s => s.classList.remove("on"));
+    this.classList.add("hidden");
+    document.getElementById("reviewThanks").classList.remove("hidden");
+    await loadReviews();
+  } catch {
+    err.textContent = "Sorry — couldn't post that. Please try again.";
+    err.classList.remove("hidden");
+  } finally {
+    btn.disabled = false; btn.textContent = "Post review";
+  }
+});
+
+/* ---- Reviews moderation (owner) ---- */
+async function loadReviewsAdmin() {
+  const box = document.getElementById("adminReviewList");
+  const { ok, data } = await api({ action: "list_reviews" });
+  if (!ok || !box) return;
+  const list = data.reviews || [];
+  if (!list.length) { box.innerHTML = '<p class="sub" style="margin:0">No reviews yet.</p>'; return; }
+  box.innerHTML = list.map(r => `
+    <div class="review">
+      <button class="rev-del" onclick="deleteReview('${r.id}')">Delete</button>
+      <div class="stars">${starStr(r.stars)}</div>
+      <p class="text">${esc(r.text)}</p>
+      <p class="who">— ${esc(r.name)}${r.created_at ? ` <span class="date">· ${formatDate((r.created_at || "").split("T")[0])}</span>` : ""}</p>
+    </div>`).join("");
+}
+async function deleteReview(id) {
+  if (!confirm("Delete this review? This can't be undone.")) return;
+  const { ok } = await api({ action: "delete_review", password: adminPassword, id });
+  if (ok) { loadReviewsAdmin(); loadReviews(); }
+}
+
+/* ---- WhatsApp button (hero + footer), built from CONFIG.whatsapp ---- */
+const WA_SVG = '<svg class="wa-svg" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 .5C7.4.5.5 7.4.5 16c0 2.8.7 5.5 2.1 7.9L.5 31.5l7.8-2c2.3 1.3 4.9 1.9 7.7 1.9 8.6 0 15.5-6.9 15.5-15.5S24.6.5 16 .5zm0 28.3c-2.5 0-4.9-.7-7-1.9l-.5-.3-4.6 1.2 1.2-4.5-.3-.5c-1.4-2.2-2.1-4.7-2.1-7.3C2.6 8.6 8.6 2.6 16 2.6S29.4 8.6 29.4 16 23.4 28.8 16 28.8zm8.2-9.9c-.4-.2-2.6-1.3-3-1.4-.4-.1-.7-.2-1 .2-.3.4-1.1 1.4-1.4 1.7-.3.3-.5.3-.9.1-.4-.2-1.9-.7-3.6-2.2-1.3-1.2-2.2-2.6-2.5-3-.3-.4 0-.6.2-.8.2-.2.4-.5.6-.7.2-.2.3-.4.4-.7.1-.3 0-.5 0-.7-.1-.2-1-2.4-1.4-3.3-.4-.9-.7-.7-1-.7h-.8c-.3 0-.7.1-1.1.5-.4.4-1.5 1.4-1.5 3.5s1.5 4.1 1.7 4.4c.2.3 3 4.6 7.3 6.4 1 .4 1.8.7 2.4.9 1 .3 1.9.3 2.6.2.8-.1 2.6-1.1 3-2.1.4-1 .4-1.9.3-2.1-.1-.2-.4-.3-.8-.5z"/></svg>';
+function setupWhatsApp() {
+  if (!CONFIG.whatsapp) return;
+  const url = `https://wa.me/${CONFIG.whatsapp}?text=` +
+    encodeURIComponent("Hi BB Car Detailing, I'd like to book a valet.");
+  const btn = document.getElementById("waBtn");
+  if (btn) {
+    btn.href = url;
+    btn.innerHTML = WA_SVG + "WhatsApp us";
+    btn.classList.remove("hidden");
+  }
+  const footerLinks = document.getElementById("footerLinks");
+  if (footerLinks) {
+    const a = document.createElement("a");
+    a.href = url; a.target = "_blank"; a.rel = "noopener";
+    a.textContent = "WhatsApp us";
+    footerLinks.appendChild(a);
+  }
+}
+
+/* ---- Before/after gallery (swipeable carousel) ---- */
+function renderGallery() {
+  const track = document.getElementById("galleryTrack");
+  const dots  = document.getElementById("galleryDots");
+  const pairs = (CONFIG.gallery || []).filter(p => p && (p.before || p.after));
+
+  // No real photos yet → keep the friendly placeholder pair.
+  if (!pairs.length) {
+    track.innerHTML = `
+      <div class="slide"><div class="pair">
+        <div class="photo"><span class="badge">Before</span>Add your<br>"before" photo</div>
+        <div class="photo"><span class="badge">After</span>Add your<br>"after" photo</div>
+      </div></div>`;
+    dots.innerHTML = "";
+    return;
+  }
+
+  track.innerHTML = pairs.map(p => `
+    <div class="slide"><div class="pair">
+      <div class="photo"><span class="badge">Before</span>${p.before ? `<img src="${esc(p.before)}" alt="Before valet" loading="lazy">` : 'Before photo'}</div>
+      <div class="photo"><span class="badge">After</span>${p.after ? `<img src="${esc(p.after)}" alt="After valet" loading="lazy">` : 'After photo'}</div>
+    </div></div>`).join("");
+
+  // Dots only make sense when there's more than one pair to swipe between.
+  dots.innerHTML = pairs.length > 1
+    ? pairs.map((_, i) => `<button class="dot ${i === 0 ? "active" : ""}" aria-label="Go to photo ${i + 1}" onclick="goToSlide(${i})"></button>`).join("")
+    : "";
+}
+
+function goToSlide(i) {
+  const car = document.getElementById("gallery");
+  car.scrollTo({ left: i * car.clientWidth, behavior: "smooth" });
+}
+
+// Keep the active dot in sync as the customer swipes.
+document.getElementById("gallery").addEventListener("scroll", () => {
+  const car = document.getElementById("gallery");
+  const idx = Math.round(car.scrollLeft / car.clientWidth);
+  document.querySelectorAll("#galleryDots .dot").forEach((d, i) => d.classList.toggle("active", i === idx));
+});
+
+/* ---- Build the customer's "Date" then "Time" dropdowns ----
+   Open slots are grouped by date, then by time within each date. If more than
+   one person is free at the same time, they're combined into one "together"
+   option. Picking a date fills the time dropdown with that day's times. */
+let slotsByDate = {};  // date -> [ { time, detailer, persons[], label } ]
 async function loadSlots() {
-  const sel = document.getElementById("slotSelect");
+  const dateSel = document.getElementById("dateSelect");
+  const timeSel = document.getElementById("slotSelect");
   const hint = document.getElementById("slotHint");
+
+  const resetTime = (msg) => {
+    timeSel.innerHTML = `<option value="" disabled selected>${msg}</option>`;
+    timeSel.disabled = true;
+  };
+
   const { ok, data } = await api({ action: "slots" });
   if (!ok) {
-    sel.innerHTML = '<option value="" disabled selected>Couldn\'t load times — please call us</option>';
+    dateSel.value = ""; dateSel.disabled = true;
+    resetTime("—");
+    hint.textContent = "Couldn't load availability — please call us.";
     return;
   }
-  const groups = {};
-  (data.slots || []).forEach(s => {
-    const key = s.slot_date + "|" + s.slot_time;
-    (groups[key] = groups[key] || []).push(s);
-  });
-  slotOptions = Object.keys(groups).sort().map(key => {
-    const [date, time] = key.split("|");
-    const people = groups[key].map(s => s.person);
-    const detailer = people.length > 1 ? people.join(" & ") + " (together)" : people[0];
-    return { date, time, detailer, persons: people, label: `${formatDate(date)}, ${time} — with ${detailer}` };
-  });
 
-  if (!slotOptions.length) {
-    sel.innerHTML = '<option value="" disabled selected>No times available right now</option>';
-    hint.textContent = "We've no free slots listed at the moment — give us a call and we'll sort something out.";
+  // Group slots so people free at the same time merge to "together".
+  slotsByDate = groupSlots(data.slots);
+
+  // Constrain the calendar to the bookable window (first → last available day).
+  const dates = Object.keys(slotsByDate).sort();
+  dateSel.value = "";
+  resetTime("Choose a date first…");
+  if (!dates.length) {
+    dateSel.disabled = true;
+    hint.textContent = "We've no free slots at the moment — give us a call and we'll sort something out.";
     return;
   }
-  sel.innerHTML = '<option value="" disabled selected>Choose an available time…</option>' +
-    slotOptions.map((o, i) => `<option value="${i}">${esc(o.label)}</option>`).join("");
+  dateSel.disabled = false;
+  dateSel.min = dates[0];
+  dateSel.max = dates[dates.length - 1];
+  hint.textContent = "Tap the calendar to pick a date, then choose a time.";
+}
+
+// When a date is picked on the calendar, fill the time dropdown for that day.
+function onDateChange() {
+  const date = document.getElementById("dateSelect").value;
+  const timeSel = document.getElementById("slotSelect");
+  const hint = document.getElementById("slotHint");
+  if (!date) {
+    timeSel.innerHTML = '<option value="" disabled selected>Choose a date first…</option>';
+    timeSel.disabled = true;
+    return;
+  }
+  const times = slotsByDate[date] || [];
+  if (!times.length) {
+    timeSel.innerHTML = '<option value="" disabled selected>No times that day</option>';
+    timeSel.disabled = true;
+    hint.textContent = "Sorry, we're not available on that day — please pick another.";
+    return;
+  }
+  timeSel.innerHTML = '<option value="" disabled selected>Choose a time…</option>' +
+    times.map((o, i) => `<option value="${i}">${esc(o.label)}</option>`).join("");
+  timeSel.disabled = false;
   hint.textContent = "";
 }
+document.getElementById("dateSelect").addEventListener("change", onDateChange);
 
 /* =====================================================================
    2. BOOKING FORM SUBMIT  (sends to the online backend)
@@ -478,24 +1215,28 @@ document.getElementById("bookingForm").addEventListener("submit", async function
 
   const data = Object.fromEntries(new FormData(this).entries());
   const svc = serviceById(data.service);
-  const slot = slotOptions[Number(data.slot)];
+  const slot = (slotsByDate[data.date] || [])[Number(data.slot)];
   const btn = document.getElementById("submitBtn");
   const errEl = document.getElementById("formError");
   errEl.classList.add("hidden");
 
   if (!slot) {
-    errEl.textContent = "Please choose an available time.";
+    errEl.textContent = "Please choose an available date and time.";
     errEl.classList.remove("hidden");
     return;
   }
 
-  // Column names here must match the database / server function.
+  // Column names here must match the database / server function. If a service
+  // is on sale, record the discounted price and note the % off on the label.
+  const eff = svc ? effectivePrice(svc) : null;
+  const label = svc ? (eff.pct ? `${svc.label} (${eff.pct}% off)` : svc.label) : data.service;
   const booking = {
     name: data.name.trim(), phone: data.phone.trim(), email: data.email.trim(),
-    service_id: data.service, service_label: svc ? svc.label : data.service,
-    price: svc ? svc.price : null,
-    booking_date: slot.date, booking_time: slot.time, detailer: slot.detailer,
-    car: data.car.trim(), address: data.address.trim(), notes: data.notes.trim()
+    service_id: data.service, service_label: label,
+    price: eff ? eff.now : null,
+    booking_date: data.date, booking_time: slot.time, detailer: slot.detailer,
+    car: data.car.trim(), address: data.address.trim(), notes: data.notes.trim(),
+    referred_by: (data.referred_by || "").trim() || null
   };
 
   btn.disabled = true; btn.textContent = "Sending…";
@@ -515,7 +1256,7 @@ document.getElementById("bookingForm").addEventListener("submit", async function
     confirm.classList.remove("hidden");
     document.getElementById("confirmText").textContent =
       `Thanks ${booking.name}! We've got your request for a ${booking.service_label} on ` +
-      `${formatDate(booking.booking_date)} at ${booking.booking_time} with ${booking.detailer}. We'll call ${booking.phone} to confirm.`;
+      `${formatDate(booking.booking_date)} at ${booking.booking_time} with ${booking.detailer}. We'll message you on WhatsApp (${booking.phone}) a few days before to confirm.`;
     confirm.scrollIntoView({ behavior: "smooth", block: "center" });
   } catch {
     errEl.textContent = "Sorry — something went wrong sending your booking. Please check your connection and try again, or call us.";
@@ -574,71 +1315,184 @@ function showAdminPanel(bookings) {
   document.getElementById("adminError").classList.add("hidden");
   document.getElementById("adminPanel").classList.remove("hidden");
 
-  // Populate the "Who's free" dropdown from your contacts (Bobby, Bramley…).
-  const personSel = document.getElementById("slotPerson");
+  // Populate the "Who's off" dropdown from your contacts, plus a "Both" option.
+  const personSel = document.getElementById("offPerson");
   if (!personSel.options.length) {
     personSel.innerHTML = CONFIG.contacts
-      .map(c => `<option value="${esc(c.name)}">${esc(c.name)}</option>`).join("");
+      .map(c => `<option value="${esc(c.name)}">${esc(c.name)}</option>`).join("")
+      + (CONFIG.contacts.length > 1 ? `<option value="Both">Both</option>` : "");
   }
-  // Default the date picker to today and stop past dates being chosen.
-  const dateInput = document.getElementById("slotDate");
-  dateInput.min = new Date().toISOString().split("T")[0];
+  // Stop past dates being chosen for time off.
+  const todayStr = new Date().toISOString().split("T")[0];
+  document.getElementById("offStart").min = todayStr;
+  document.getElementById("offEnd").min = todayStr;
+
+  // Fill the "Service" dropdown for the discounts panel.
+  const discSel = document.getElementById("discService");
+  if (discSel && !discSel.options.length) {
+    discSel.innerHTML = CONFIG.services
+      .map(s => `<option value="${esc(s.id)}">${esc(s.label)}</option>`).join("");
+  }
 
   renderBookings(bookings);
-  loadAdminRanges();
+  loadTimeOff();
+  loadDiscountsAdmin();
+  loadReviewsAdmin();
 }
 
-/* ---- Availability management (owner) ---- */
-async function loadAdminRanges() {
-  const { ok, data } = await api({ action: "list_ranges", password: adminPassword });
-  if (ok) renderAdminRanges(data.ranges || []);
+/* ---- Discounts / sales management (owner) ---- */
+let discountList = [];  // [{ service_id, percent }]
+async function loadDiscountsAdmin() {
+  const { ok, data } = await api({ action: "discounts" });
+  if (ok) { discountList = data.discounts || []; renderDiscountAdmin(); }
 }
 
-function renderAdminRanges(list) {
-  const box = document.getElementById("slotList");
-  if (!list.length) { box.innerHTML = '<p class="sub" style="margin:0">No free times added yet.</p>'; return; }
-
-  // Group by date so the list is easy to scan.
-  const byDay = {};
-  list.forEach(r => { (byDay[r.avail_date] = byDay[r.avail_date] || []).push(r); });
-
-  box.innerHTML = Object.keys(byDay).sort().map(date => `
-    <div class="slot-day">${formatDate(date)}</div>
-    ${byDay[date].map(r => `
-      <div class="slot-row">
-        <span>${r.start_time}–${r.end_time} · ${esc(r.person)}</span>
-        <button class="slot-del" onclick="deleteRange('${r.id}')">Remove</button>
-      </div>`).join("")}
-  `).join("");
+function renderDiscountAdmin() {
+  const box = document.getElementById("discList");
+  if (!box) return;
+  if (!discountList.length) {
+    box.innerHTML = '<p class="sub" style="margin:0">No sales on right now — every service is at full price.</p>';
+    return;
+  }
+  box.innerHTML = discountList.map(d => {
+    const s = serviceById(d.service_id);
+    const label = s ? s.label : d.service_id;
+    const was = s ? money(s.price) : "";
+    const now = s ? money(Math.round(s.price * (100 - d.percent)) / 100) : "";
+    return `
+    <div class="slot-row">
+      <span>${esc(label)} · <strong>${d.percent}% off</strong>${s ? ` <span style="color:var(--muted)">(${was} → ${now})</span>` : ""}</span>
+      <button class="slot-del" onclick="removeDiscount('${esc(d.service_id)}')">Remove</button>
+    </div>`;
+  }).join("");
 }
 
-async function addRange() {
-  const person = document.getElementById("slotPerson").value;
-  const avail_date = document.getElementById("slotDate").value;
-  const start_time = document.getElementById("slotStart").value;
-  const end_time = document.getElementById("slotEnd").value;
-  const msg = document.getElementById("slotMsg");
-  const btn = document.getElementById("addSlotBtn");
+async function setDiscount() {
+  const service_id = document.getElementById("discService").value;
+  const percent = parseInt(document.getElementById("discPercent").value, 10);
+  const msg = document.getElementById("discMsg");
+  const btn = document.getElementById("addDiscBtn");
 
-  if (!avail_date || !start_time || !end_time) { msg.textContent = "Pick a date, a 'from' time and a 'until' time."; return; }
-  if (end_time <= start_time) { msg.textContent = "'Free until' must be after 'free from'."; return; }
+  if (!service_id) { msg.textContent = "Pick a service."; return; }
+  if (!Number.isInteger(percent) || percent < 1 || percent > 95) {
+    msg.textContent = "Enter a percent between 1 and 95."; return;
+  }
+
+  btn.disabled = true; btn.textContent = "Saving…";
+  const { ok } = await api({ action: "set_discount", password: adminPassword, discount: { service_id, percent } });
+  btn.disabled = false; btn.textContent = "Put on sale";
+  if (ok) {
+    const s = serviceById(service_id);
+    msg.textContent = `${s ? s.label : service_id} is now ${percent}% off.`;
+    document.getElementById("discPercent").value = "";
+    loadDiscountsAdmin();
+  } else {
+    msg.textContent = "Couldn't save that — please try again.";
+  }
+}
+
+async function removeDiscount(service_id) {
+  const { ok } = await api({ action: "remove_discount", password: adminPassword, service_id });
+  if (ok) loadDiscountsAdmin();
+}
+
+/* ---- Time off management (owner) ----
+   The default working hours are automatic; here owners block the days they're
+   NOT available (holidays, days off). A blank "to" date means a single day. */
+let timeOffList = [];
+async function loadTimeOff() {
+  const { ok, data } = await api({ action: "list_time_off", password: adminPassword });
+  if (ok) {
+    timeOffList = data.time_off || [];
+    renderTimeOffCalendar();
+    renderTimeOff(timeOffList);
+  }
+}
+
+function renderTimeOff(list) {
+  const box = document.getElementById("offList");
+  if (!list.length) {
+    box.innerHTML = '<p class="sub" style="margin:0">No time off booked — you\'re on the standard hours every day.</p>';
+    return;
+  }
+  box.innerHTML = list.map(t => `
+    <div class="slot-row">
+      <span>${esc(t.person)} · ${formatDate(t.start_date)}${t.end_date && t.end_date !== t.start_date ? " → " + formatDate(t.end_date) : ""}</span>
+      <button class="slot-del" onclick="deleteTimeOff('${t.id}')">Remove</button>
+    </div>`).join("");
+}
+
+/* ---- Colour-coded time-off calendar ----
+   Blue = Bobby off, Red = Bramley off, Purple = both off, normal = both free. */
+const CAL_MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const CAL_HEADS = ["Mo","Tu","We","Th","Fr","Sa","Su"];
+const calPad2 = n => String(n).padStart(2, "0");
+const calIso = (y, m, d) => `${y}-${calPad2(m + 1)}-${calPad2(d)}`;  // m is 0-based
+function personOff(person, iso) {
+  return timeOffList.some(t => t.person === person && iso >= t.start_date && iso <= t.end_date);
+}
+function renderTimeOffCalendar() {
+  const box = document.getElementById("offCalendar");
+  if (!box) return;
+  const todayIso = new Date().toISOString().split("T")[0];
+  const now = new Date();
+  const MONTHS_AHEAD = 7;  // current month + 6 months ahead; rolls forward each month
+  let html = "";
+  for (let k = 0; k < MONTHS_AHEAD; k++) {
+    const base = now.getMonth() + k;
+    const year = now.getFullYear() + Math.floor(base / 12);
+    const month = ((base % 12) + 12) % 12;
+    const startWeekday = (new Date(year, month, 1).getDay() + 6) % 7;  // Monday = 0
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    let cells = "";
+    for (let i = 0; i < startWeekday; i++) cells += '<div class="cal-day empty"></div>';
+    for (let d = 1; d <= daysInMonth; d++) {
+      const iso = calIso(year, month, d);
+      const bobby = personOff("Bobby", iso), bram = personOff("Bramley", iso);
+      let cls = "cal-day";
+      if (bobby && bram) cls += " cal-off-both";
+      else if (bobby) cls += " cal-off-bobby";
+      else if (bram) cls += " cal-off-bramley";
+      if (iso < todayIso) cls += " past";
+      cells += `<div class="${cls}">${d}</div>`;
+    }
+    html += `<div class="cal-month">
+      <div class="cal-title">${CAL_MONTHS[month]} ${year}</div>
+      <div class="cal-grid">${CAL_HEADS.map(h => `<div class="cal-head">${h}</div>`).join("")}${cells}</div>
+    </div>`;
+  }
+  box.innerHTML = html;
+}
+
+async function addTimeOff() {
+  const person = document.getElementById("offPerson").value;
+  const start_date = document.getElementById("offStart").value;
+  const end_date = document.getElementById("offEnd").value;  // may be ""
+  const msg = document.getElementById("offMsg");
+  const btn = document.getElementById("addOffBtn");
+
+  if (!start_date) { msg.textContent = "Pick a 'from' date."; return; }
+  if (end_date && end_date < start_date) { msg.textContent = "'To' date must be on or after the 'from' date."; return; }
 
   btn.disabled = true; btn.textContent = "Adding…";
-  const { ok } = await api({ action: "add_range", password: adminPassword, range: { person, avail_date, start_time, end_time } });
-  btn.disabled = false; btn.textContent = "Add availability";
+  const { ok } = await api({ action: "add_time_off", password: adminPassword, time_off: { person, start_date, end_date } });
+  btn.disabled = false; btn.textContent = "Add time off";
   if (ok) {
-    msg.textContent = `Added ${person} · ${formatDate(avail_date)}, ${start_time}–${end_time}.`;
-    document.getElementById("slotStart").value = "";
-    document.getElementById("slotEnd").value = "";
-    loadAdminRanges();
+    const who = person === "Both" ? "Bobby & Bramley" : person;
+    const range = end_date && end_date !== start_date
+      ? `${formatDate(start_date)} → ${formatDate(end_date)}` : formatDate(start_date);
+    msg.textContent = `Booked ${who} off: ${range}.`;
+    document.getElementById("offStart").value = "";
+    document.getElementById("offEnd").value = "";
+    loadTimeOff();
   } else {
     msg.textContent = "Couldn't add that — please try again.";
   }
 }
 
-async function deleteRange(id) {
-  const { ok } = await api({ action: "delete_range", password: adminPassword, id });
-  if (ok) loadAdminRanges();
+async function deleteTimeOff(id) {
+  const { ok } = await api({ action: "delete_time_off", password: adminPassword, id });
+  if (ok) loadTimeOff();
 }
 
 // Re-fetch the latest bookings from the server.
@@ -648,16 +1502,41 @@ async function loadBookings() {
   if (ok) renderBookings(data.bookings || []);
 }
 
+const LOYALTY_EVERY = 5;  // every Nth valet is half price
+// Canonicalise a UK number so "+44 7903…", "0044 7903…" and "07903…" all match.
+function phoneKey(p) {
+  let d = String(p ?? "").replace(/\D/g, "");
+  if (d.startsWith("0044")) d = d.slice(4);
+  else if (d.startsWith("44")) d = d.slice(2);
+  if (d && !d.startsWith("0")) d = "0" + d;
+  return d;
+}
+
 function renderBookings(list) {
   // Server already sorts by date+time, but sort again to be safe.
   list.sort((a, b) => (a.booking_date + a.booking_time).localeCompare(b.booking_date + b.booking_time));
+
+  // Loyalty: number each customer's valets in order (by phone). The current
+  // booking's number tells us if it's a half-price milestone (every 5th).
+  const seqCount = {}, seqById = {};
+  list.forEach(b => {
+    const k = phoneKey(b.phone);
+    seqCount[k] = (seqCount[k] || 0) + 1;
+    seqById[b.id] = seqCount[k];
+  });
 
   const pending = list.filter(b => !b.completed).length;
   document.getElementById("adminCount").textContent = list.length
     ? `${list.length} total · ${pending} pending`
     : "No bookings yet.";
 
-  document.getElementById("bookingsList").innerHTML = list.map(b => `
+  document.getElementById("bookingsList").innerHTML = list.map(b => {
+    const n = seqById[b.id];
+    const milestone = n % LOYALTY_EVERY === 0;
+    const loyalty = milestone
+      ? `<span class="loyalty milestone">★ Valet #${n} — HALF PRICE</span>`
+      : `<span class="loyalty">Valet #${n}</span>`;
+    return `
     <div class="booking ${b.completed ? "done" : ""}">
       <div class="top">
         <div>
@@ -666,6 +1545,7 @@ function renderBookings(list) {
         </div>
         <span class="svc">${esc(b.service_label)}${b.price != null ? " · " + money(b.price) : ""}</span>
       </div>
+      <div style="margin:8px 0">${loyalty}</div>
       <dl>
         <dt>Name</dt><dd>${esc(b.name)}</dd>
         <dt>Phone</dt><dd><a href="tel:${esc(b.phone)}">${esc(b.phone)}</a></dd>
@@ -673,6 +1553,7 @@ function renderBookings(list) {
         ${b.detailer ? `<dt>Detailer</dt><dd>${esc(b.detailer)}</dd>` : ""}
         <dt>Car</dt><dd>${esc(b.car)}</dd>
         <dt>Address</dt><dd>${esc(b.address)}</dd>
+        ${b.referred_by ? `<dt>Referred by</dt><dd>${esc(b.referred_by)} <span style="color:var(--sale)">· £5 off both</span></dd>` : ""}
         ${b.notes ? `<dt>Notes</dt><dd>${esc(b.notes)}</dd>` : ""}
       </dl>
       <div class="actions">
@@ -681,7 +1562,8 @@ function renderBookings(list) {
         </button>
         <button class="del-btn" onclick="deleteBooking('${b.id}')">Delete</button>
       </div>
-    </div>`).join("");
+    </div>`;
+  }).join("");
 }
 
 async function toggleComplete(id, completed) {
@@ -707,13 +1589,140 @@ function esc(str) {
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
+/* ---- "Please read" terms popup ---- */
+function showTerms(e) {
+  if (e) e.preventDefault();
+  document.getElementById("termsModal").classList.remove("hidden");
+  document.body.style.overflow = "hidden";  // stop the page behind scrolling
+}
+function acceptTerms() {
+  document.getElementById("termsModal").classList.add("hidden");
+  document.body.style.overflow = "";
+}
+
+/* ---- Side menu (hamburger) ---- */
+function openMenu() {
+  document.getElementById("sideMenu").classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+}
+function closeMenu() {
+  document.getElementById("sideMenu").classList.add("hidden");
+  document.body.style.overflow = "";
+}
+function closeMenuFromOverlay(e) { if (e.target.id === "sideMenu") closeMenu(); }
+
 /* =====================================================================
-   5. TINY ROUTER — show admin when URL hash is #admin, else the site
+   AVAILABILITY CALENDAR (customer view) — weekly, built from open slots.
+   ===================================================================== */
+// Group raw slots ({slot_date, slot_time, person}) by date, merging people free
+// at the same time into one "together" entry. Shared with the booking form.
+function groupSlots(slots) {
+  const groups = {};
+  (slots || []).forEach(s => {
+    const key = s.slot_date + "|" + s.slot_time;
+    (groups[key] = groups[key] || []).push(s);
+  });
+  const byDate = {};
+  Object.keys(groups).sort().forEach(key => {
+    const [date, time] = key.split("|");
+    const people = groups[key].map(s => s.person);
+    const detailer = people.length > 1 ? people.join(" & ") + " (together)" : people[0];
+    (byDate[date] = byDate[date] || []).push({ time, detailer, persons: people, label: `${time} — with ${detailer}` });
+  });
+  return byDate;
+}
+
+// Small date helpers (local time, "YYYY-MM-DD").
+const CAL_DAYNAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+function isoLocal(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }
+function todayIso() { return isoLocal(new Date()); }
+function addDaysIso(iso, n) { const d = new Date(iso + "T00:00:00"); d.setDate(d.getDate() + n); return isoLocal(d); }
+function mondayOf(iso) { const d = new Date(iso + "T00:00:00"); const back = (d.getDay() + 6) % 7; d.setDate(d.getDate() - back); return isoLocal(d); }
+function fmtDM(iso) { return new Date(iso + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" }); }
+
+let availByDate = {};
+let calWeekStart = null;  // Monday (ISO) of the displayed week
+
+async function loadAvailability() {
+  const grid = document.getElementById("weekGrid");
+  const { ok, data } = await api({ action: "slots" });
+  if (!ok) { grid.innerHTML = '<p class="sub">Couldn\'t load availability — please try again, or give us a call.</p>'; return; }
+  availByDate = groupSlots(data.slots);
+  calWeekStart = mondayOf(todayIso());  // always open on the current week
+  renderWeek();
+}
+
+function weekShift(days) {
+  const minStart = mondayOf(todayIso());
+  const maxStart = mondayOf(addDaysIso(todayIso(), 42));  // ~6-week booking horizon
+  let next = addDaysIso(calWeekStart, days);
+  if (next < minStart) next = minStart;
+  if (next > maxStart) next = maxStart;
+  calWeekStart = next;
+  renderWeek();
+}
+
+function renderWeek() {
+  const grid = document.getElementById("weekGrid");
+  const label = document.getElementById("weekLabel");
+  const todayStr = todayIso();
+  const minStart = mondayOf(todayStr);
+  const maxStart = mondayOf(addDaysIso(todayStr, 42));
+  const horizonEnd = addDaysIso(todayStr, 42);
+  const start = calWeekStart;
+  const end = addDaysIso(start, 6);
+
+  label.textContent = `${fmtDM(start)} – ${fmtDM(end)} ${new Date(end + "T00:00:00").getFullYear()}`;
+
+  let html = "";
+  for (let i = 0; i < 7; i++) {
+    const iso = addDaysIso(start, i);
+    const times = availByDate[iso] || [];
+    let body;
+    if (iso < todayStr) body = '<span class="avail-none">—</span>';
+    else if (iso > horizonEnd) body = '<span class="avail-none">Not open for booking yet</span>';
+    else if (!times.length) body = '<span class="avail-none">Fully booked / off</span>';
+    else body = times.map(t => `<span class="avail-chip" role="button" tabindex="0" onclick="bookSlot('${iso}','${t.time}')" onkeydown="if(event.key==='Enter'||event.key===' ')bookSlot('${iso}','${t.time}')">${esc(t.time)}</span>`).join("");
+    html += `<div class="avail-row ${iso < todayStr ? "past" : ""} ${iso === todayStr ? "today" : ""}">
+      <div class="avail-day"><span class="dname">${CAL_DAYNAMES[i]}</span><span class="ddate">${fmtDM(iso)}</span></div>
+      <div class="avail-times">${body}</div>
+    </div>`;
+  }
+  grid.innerHTML = html;
+
+  document.getElementById("weekPrev").disabled = start <= minStart;
+  document.getElementById("monthPrev").disabled = start <= minStart;
+  document.getElementById("weekNext").disabled = start >= maxStart;
+  document.getElementById("monthNext").disabled = start >= maxStart;
+}
+
+function bookSlot(date, time) {
+  location.hash = "#book";
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const dateEl = document.getElementById("dateSelect");
+    dateEl.value = date;
+    onDateChange();
+    const slots = slotsByDate[date] || [];
+    const idx = slots.findIndex(s => s.time === time);
+    const timeSel = document.getElementById("slotSelect");
+    if (idx >= 0) timeSel.value = String(idx);
+    document.getElementById("book").scrollIntoView({ behavior: "smooth", block: "start" });
+  }));
+}
+
+/* =====================================================================
+   5. TINY ROUTER — #admin owner, #reviews, #availability, else the site
    ===================================================================== */
 function route() {
   const isAdmin = location.hash === "#admin";
+  const isReviews = location.hash === "#reviews";
+  const isAvail = location.hash === "#availability";
   document.getElementById("admin").classList.toggle("hidden", !isAdmin);
-  document.getElementById("main").classList.toggle("hidden", isAdmin);
+  document.getElementById("reviews").classList.toggle("hidden", !isReviews);
+  document.getElementById("availability").classList.toggle("hidden", !isAvail);
+  document.getElementById("main").classList.toggle("hidden", isAdmin || isReviews || isAvail);
+  closeMenu();  // close the side menu after navigating
+  if (isAvail) { window.scrollTo(0, 0); loadAvailability(); }
   if (isAdmin) {
     window.scrollTo(0, 0);
     // If we still have a password from earlier this tab, try to go straight
@@ -725,11 +1734,22 @@ function route() {
       });
     }
   }
+  if (isReviews) {
+    window.scrollTo(0, 0);
+    // Fresh write-form each visit (hide any leftover "thanks" message).
+    document.getElementById("reviewForm").classList.remove("hidden");
+    document.getElementById("reviewThanks").classList.add("hidden");
+    loadReviews();
+  }
 }
 window.addEventListener("hashchange", route);
 
 buildPage();
 route();
+
+// Show the "Please read" terms popup when the site first opens (not on the
+// owner, reviews or availability pages).
+if (!["#admin", "#reviews", "#availability"].includes(location.hash)) showTerms();
 </script>
 
 </body>

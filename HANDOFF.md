@@ -1,16 +1,37 @@
-# BB Details — Project Handoff & Context
+# BB Car Detailing — Project Handoff & Context
 
-> **Read this first.** This file is the complete state of the BB Details
+> **Read this first.** This file is the complete state of the BB Car Detailing
 > project. A new Claude Code session can read it and continue at full
-> capability. Last updated: 2026-06-17.
+> capability. Last updated: 2026-06-20 (customer Availability tab, hamburger
+> side menu, weekday hours extended to 7:30pm).
+
+> ## ⚠️ PENDING BACKEND DEPLOY (do this first if not done)
+> On 2026-06-20 the weekday hours were extended to **7:30pm** in the website +
+> owner text, but the **Supabase function deploy was blocked** by an MCP
+> "requires approval" bug (server reconnected mid-session). **The live
+> `bb-bookings` function still has weekday end `19:00`** — it needs to be
+> `19:30` (so weekday starts 16:30 AND 17:00 are offered).
+> **To finish:** fetch the CURRENT deployed function with the Supabase MCP
+> `get_edge_function` (project `qqkxxywdlqqkipioycaq`), change
+> `DEFAULT_HOURS.weekday.end` from `"19:00"` to `"19:30"`, and redeploy with
+> `deploy_edge_function` (`verify_jwt: false`). **Do NOT redeploy from the
+> Section 7 listing below — it is older than the live function** (missing the
+> reviews/loyalty/referred_by code); edit the live source instead.
 
 ---
 
 ## 1. What this project is
 
-A single-page **mobile car valeting website** for **BB Details**.
-Owners: **Bobby** and **Bramley**. Dark theme (blacks/greys), mobile-first
-(customers arrive from Facebook/Instagram links).
+A single-page **mobile car detailing website** for **BB Car Detailing**
+(tagline **"Cleaner. Shinier. Better."**). Owners: **Bobby** and **Bramley**.
+Dark theme (blacks/greys), mobile-first (customers arrive from
+Facebook/Instagram links). The silver "BB Car Detailing" logo lives in the repo
+as `logo.jpg`.
+
+> **Naming note:** the business was originally drafted as "BB Details"; it was
+> renamed to **BB Car Detailing** to match the logo. You may still see the old
+> name in old git history, but the live site and all current text use
+> "BB Car Detailing".
 
 The entire website is **one self-contained file, `index.html`** (HTML + CSS +
 JavaScript, no build step). Bookings and availability are stored online in
@@ -49,12 +70,34 @@ Claude **cannot push to it directly**. The established workflow is:
    often shows the old version — this has confused the user before; reassure
    them it's only their cached copy.
 
-**If a future session IS scoped to Booking-system**, you can push `index.html`
-directly with the GitHub tools and skip the manual upload — much better.
-Consider asking the user to add Booking-system to the session.
+**If a session IS scoped to Booking-system** (as the 2026-06-17 session was),
+skip the manual upload entirely — work on the feature branch, commit, and push
+directly. Uploaded images (logo/photos) can be copied straight from the
+session's upload folder into the repo and committed; the user does **not** need
+to upload them via Safari in that case.
+
+**Going live (IMPORTANT):** GitHub Pages serves from the **`main`** branch, so
+changes on a feature branch are **not live** until merged into `main`. With the
+GitHub tools: open a PR (`head` = feature branch, `base` = main) and merge it
+(squash). Only do this when the user says to go live. After merging, give the
+user the live URL with a **cache-buster** (`?v=2`, `?v=3`, …). The user has
+been happy for Claude to open AND merge the PR itself once they say "go live".
+
+**Squash-merge gotcha (do this every time):** squash-merging rewrites history,
+so the feature branch diverges from `main` and the *next* PR can report a
+phantom merge conflict. After each successful merge, resync the branch before
+the next change:
+`git fetch origin main && git reset --hard origin/main && git push -f origin <branch>`.
+That keeps the branch a clean continuation of `main`.
+
+**Docs must be on `main`:** a brand-new session clones `main`, so HANDOFF.md /
+POSTER-PROMPT.md changes only reach the next session if they're merged to
+`main` (not left on the feature branch).
 
 Backend changes (Supabase) are done by Claude directly via the Supabase MCP
-tools — no user action needed.
+tools — no user action needed, and they affect the **live** site immediately
+(the function is shared), so coordinate function changes with the matching
+front-end merge.
 
 ---
 
@@ -76,18 +119,49 @@ tools — no user action needed.
 ### Business rules (constants in the Edge Function)
 - `JOB_MINUTES = 150` — each valet takes 2½ hours.
 - `STEP_MINUTES = 30` — bookable start times every 30 minutes.
+- `HORIZON_DAYS = 42` — how many days ahead bookings are offered (6 weeks).
+- `PERSONS = ["Bobby", "Bramley"]` — the two detailers.
+- `DEFAULT_HOURS` — **weekdays (Mon–Fri) 16:30–19:00** (after school),
+  **weekends (Sat/Sun) 10:00–18:00**. Applies to both people automatically.
 - `ADMIN_PASSWORD = "bbdetails2026"`.
 - To change any of these: edit the function source (Section 7) and redeploy
   via the Supabase MCP `deploy_edge_function` (keep `verify_jwt = false`).
 
-### How availability works
-Owners add free-time **ranges** (person, date, from, until). The function
-generates start times every 30 min where `start + 150min <= end`, then removes
-any start whose 2½-hour job would **overlap** an existing booking for that
-person (overlap test: `t < bookingTime+150 && bookingTime < t+150`). So booking
-11:00 (job to 13:30) on a 09:00–17:00 day leaves only 13:30, 14:00, 14:30.
+### Email notifications (Resend) — added 2026-06-18
+On a successful `create`, the function emails an **owner alert** (to
+`OWNER_EMAILS`, currently Bobby's iCloud) and a **customer confirmation** (to the
+booker's email), via **[Resend](https://resend.com)**. Sends are fire-and-forget
+(wrapped in try/catch) so a booking is **never** lost if email fails.
+- `RESEND_API_KEY` — read from env, else a fallback literal in the function.
+  **The real key lives ONLY in the deployed function, NOT in this repo** (same as
+  `ADMIN_PASSWORD`). The Section 7 listing shows a `re_…` placeholder — get the
+  live value from the Supabase function source if redeploying, or ask Bobby.
+- `FROM_EMAIL = "BB Car Detailing <onboarding@resend.dev>"` — Resend's shared
+  sender. **No domain is verified yet**, so Resend only delivers to the Resend
+  account's own email (Bobby's iCloud). That means **owner alerts work**, but
+  **customer confirmations to other people silently don't send** until a domain
+  is verified. Adding Bramley to `OWNER_EMAILS` also needs the domain.
+- To finish it off later: verify a domain in Resend, change `FROM_EMAIL` to that
+  domain, then customer emails + extra recipients all work. Redeploy after edits.
+
+### How availability works (INVERTED model — "book time off", not "add free time")
+Both people are assumed **free by default** during `DEFAULT_HOURS` every day.
+Owners no longer add free time; instead they book **time off** (holidays / days
+they can't work) per person, optionally as a multi-day date range. The function
+generates the implicit free ranges for the next `HORIZON_DAYS` days from
+`DEFAULT_HOURS`, **skips any day a person has booked off**, then for each
+remaining day produces start times every 30 min where `start + 150min <= end`,
+and removes any start whose 2½-hour job would **overlap** an existing booking for
+that person (overlap test: `t < bookingTime+150 && bookingTime < t+150`).
+So a weekday yields a single start (16:30); a weekend yields 10:00–15:30.
 If **both** people are free at the same start time, the website combines them
 into a single **"Bobby & Bramley (together)"** option; booking it ties up both.
+
+> **History:** the original design used an `availability` table of explicit
+> free-time ranges (`add_range`/`list_ranges`/`delete_range`). On 2026-06-17 this
+> was inverted to the default-hours + time-off model above. The old
+> `availability` table still exists but is **no longer read or written** by the
+> function; the new `time_off` table drives blocking.
 
 ---
 
@@ -115,14 +189,31 @@ create table public.bookings (
 );
 alter table public.bookings enable row level security;  -- no policies: function-only
 
--- Availability ranges
-create table public.availability (
+-- Time off (holidays / days a person is unavailable). Drives slot blocking.
+create table public.time_off (
   id          uuid primary key default gen_random_uuid(),
   created_at  timestamptz not null default now(),
-  person      text not null,
-  avail_date  date not null,
-  start_time  text not null,          -- "HH:MM"
-  end_time    text not null,          -- "HH:MM"
+  person      text not null,          -- "Bobby" | "Bramley"
+  start_date  date not null,
+  end_date    date not null           -- inclusive; == start_date for a single day
+);
+alter table public.time_off enable row level security;  -- no policies: function-only
+
+-- Discounts / sales (one row per service; service_id is the key so setting a
+-- discount is an upsert). Added 2026-06-18. Function-only: RLS on, no policies.
+create table public.discounts (
+  service_id text primary key,
+  percent    int not null check (percent >= 1 and percent <= 95),
+  updated_at timestamptz not null default now()
+);
+alter table public.discounts enable row level security;  -- no policies: function-only
+
+-- Legacy: availability ranges (NO LONGER USED — kept for history, not read/written)
+create table public.availability (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  person text not null, avail_date date not null,
+  start_time text not null, end_time text not null,
   unique (person, avail_date, start_time, end_time)
 );
 alter table public.availability enable row level security;  -- no policies: function-only
@@ -137,17 +228,25 @@ POST JSON to the function URL with an `action`:
 **Public (no password):**
 - `{ action: "slots" }` → `{ slots: [{slot_date, slot_time, person}, …] }`
   (open start times; the site groups same date+time across people).
+- `{ action: "discounts" }` → `{ discounts: [{service_id, percent}, …] }` —
+  current sales, so the site can show sale prices.
 - `{ action: "create", booking: {…}, persons: ["Bobby"] }` → re-validates the
   time is still free for all `persons`, returns `409 {error:"taken"}` if not,
-  else inserts and returns `{ok:true}`.
+  else inserts and returns `{ok:true}`. **Also fires the booking emails** (owner
+  alert + customer confirmation) — see Section 4.
 
 **Owner (must include `password`):**
 - `{ action: "list" }` → all bookings
 - `{ action: "complete", id, completed }` → toggle completed
 - `{ action: "delete", id }` → delete a booking
-- `{ action: "list_ranges" }` → upcoming availability ranges
-- `{ action: "add_range", range: {person, avail_date, start_time, end_time} }`
-- `{ action: "delete_range", id }`
+- `{ action: "list_time_off" }` → upcoming time off rows
+- `{ action: "add_time_off", time_off: {person, start_date, end_date?} }` —
+  `person` may be `"Both"` (inserts a row for each of `PERSONS`); `end_date`
+  optional (defaults to `start_date` for a single day).
+- `{ action: "delete_time_off", id }`
+- `{ action: "set_discount", discount: {service_id, percent} }` — upsert a sale
+  (percent 1–95); one discount per service.
+- `{ action: "remove_discount", service_id }` — end a service's sale.
 
 ---
 
@@ -162,6 +261,21 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 const ADMIN_PASSWORD = "bbdetails2026";  // <-- change me
 const JOB_MINUTES = 150;                 // length of one valet (2.5 hours)
 const STEP_MINUTES = 30;                 // offer a start time every 30 mins
+const HORIZON_DAYS = 42;                 // how many days ahead to offer bookings (6 weeks)
+const PERSONS = ["Bobby", "Bramley"];    // the two detailers
+
+// ----- Email notifications (Resend) -----
+// REAL KEY lives only in the deployed function — this is a placeholder.
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") || "re_XXXXXXduplicate_placeholder_XXXXXX";
+const OWNER_EMAILS = ["bobbyparnell0109@icloud.com"];  // who gets new-booking alerts
+const FROM_EMAIL = "BB Car Detailing <onboarding@resend.dev>";  // change once a domain is verified
+
+// Standard working hours assumed automatically every day. Owners book TIME OFF
+// (holidays / days they can't work) to remove days from this default.
+const DEFAULT_HOURS = {
+  weekday: { start: "16:30", end: "19:00" },  // Mon-Fri, after school
+  weekend: { start: "10:00", end: "18:00" },  // Sat-Sun
+};
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -179,10 +293,32 @@ function json(body: unknown, status = 200) {
   });
 }
 
+function esc(s: unknown) {
+  return String(s ?? "").replace(/[&<>"']/g, c =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
+}
+
+// Fire-and-forget email via Resend; never throws (a booking must not fail on email).
+async function sendEmail(to: string | string[], subject: string, html: string) {
+  if (!RESEND_API_KEY) return;
+  try {
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from: FROM_EMAIL, to, subject, html }),
+    });
+  } catch (_) { /* ignore email errors */ }
+}
+
 function today() { return new Date().toISOString().split("T")[0]; }
 function toMin(t: string) { const [h, m] = t.split(":").map(Number); return h * 60 + m; }
 function pad(n: number) { return String(n).padStart(2, "0"); }
 function fromMin(x: number) { return pad(Math.floor(x / 60)) + ":" + pad(x % 60); }
+function addDays(iso: string, n: number) {
+  const d = new Date(iso + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().split("T")[0];
+}
+function dowOf(iso: string) { return new Date(iso + "T00:00:00Z").getUTCDay(); } // 0 Sun .. 6 Sat
 
 async function db(table: string, method: string, query = "", body?: unknown, prefer?: string) {
   const headers: Record<string, string> = {
@@ -197,6 +333,30 @@ async function db(table: string, method: string, query = "", body?: unknown, pre
 }
 
 type Booking = { booking_date: string; booking_time: string; persons: string[] | null };
+type TimeOff = { person: string; start_date: string; end_date: string };
+
+// Is this person blocked (on holiday / off) on this date?
+function isBlocked(person: string, iso: string, off: TimeOff[]) {
+  return off.some(t => t.person === person && iso >= t.start_date && iso <= t.end_date);
+}
+
+// Build the implicit free-time ranges from the default hours, for every day in
+// the booking horizon, skipping any day a person has booked off.
+function buildRanges(off: TimeOff[]) {
+  const ranges: { person: string; avail_date: string; start_time: string; end_time: string }[] = [];
+  const start = today();
+  for (let i = 0; i <= HORIZON_DAYS; i++) {
+    const iso = addDays(start, i);
+    const dow = dowOf(iso);
+    const h = (dow === 0 || dow === 6) ? DEFAULT_HOURS.weekend : DEFAULT_HOURS.weekday;
+    for (const person of PERSONS) {
+      if (isBlocked(person, iso, off)) continue;
+      ranges.push({ person, avail_date: iso, start_time: h.start, end_time: h.end });
+    }
+  }
+  return ranges;
+}
+
 function computeFree(ranges: any[], bookings: Booking[]) {
   const out: { slot_date: string; slot_time: string; person: string }[] = [];
   for (const r of ranges) {
@@ -216,16 +376,16 @@ function computeFree(ranges: any[], bookings: Booking[]) {
 }
 
 async function loadForCompute() {
-  const [rangesR, booksR] = await Promise.all([
-    db("availability", "GET", `?avail_date=gte.${today()}&order=avail_date.asc,start_time.asc`),
+  const [offR, booksR] = await Promise.all([
+    db("time_off", "GET", `?end_date=gte.${today()}&order=start_date.asc`),
     db("bookings", "GET", `?booking_date=gte.${today()}&select=booking_date,booking_time,busy_persons`),
   ]);
-  if (!rangesR.ok || !booksR.ok) return null;
+  if (!offR.ok || !booksR.ok) return null;
   const bookings: Booking[] = (booksR.data || []).map((b: any) => ({
     booking_date: b.booking_date, booking_time: b.booking_time,
     persons: Array.isArray(b.busy_persons) && b.busy_persons.length ? b.busy_persons : null,
   }));
-  return { ranges: rangesR.data || [], bookings };
+  return { ranges: buildRanges(offR.data || []), bookings };
 }
 
 Deno.serve(async (req: Request) => {
@@ -240,6 +400,12 @@ Deno.serve(async (req: Request) => {
     const ctx = await loadForCompute();
     if (!ctx) return json({ error: "Could not load times" }, 500);
     return json({ slots: computeFree(ctx.ranges, ctx.bookings) });
+  }
+
+  // Public: current discounts/sales so the site can show sale prices.
+  if (action === "discounts") {
+    const r = await db("discounts", "GET", "?select=service_id,percent&order=service_id.asc");
+    return r.ok ? json({ discounts: r.data }) : json({ error: "Could not load discounts" }, 500);
   }
 
   if (action === "create") {
@@ -264,7 +430,29 @@ Deno.serve(async (req: Request) => {
       detailer: b.detailer ?? null, busy_persons: persons.length ? persons : null,
     };
     const r = await db("bookings", "POST", "", row, "return=minimal");
-    return r.ok ? json({ ok: true }) : json({ error: "Could not save booking" }, 500);
+    if (!r.ok) return json({ error: "Could not save booking" }, 500);
+
+    // Notify owners + customer (only if RESEND_API_KEY is configured).
+    const priceTxt = row.price != null ? ` (£${row.price})` : "";
+    const summary = `${row.service_label || "Valet"}${priceTxt} — ${row.booking_date} at ${row.booking_time}`;
+    const ownerHtml = `<h2>New booking</h2><p>${esc(summary)}</p><ul>
+      <li><b>Name:</b> ${esc(row.name)}</li>
+      <li><b>Phone:</b> ${esc(row.phone)}</li>
+      <li><b>Email:</b> ${esc(row.email)}</li>
+      <li><b>Car:</b> ${esc(row.car || "")}</li>
+      <li><b>Address:</b> ${esc(row.address || "")}</li>
+      ${row.detailer ? `<li><b>Detailer:</b> ${esc(row.detailer)}</li>` : ""}
+      ${row.notes ? `<li><b>Notes:</b> ${esc(row.notes)}</li>` : ""}
+    </ul>`;
+    await sendEmail(OWNER_EMAILS, "New booking: " + summary, ownerHtml);
+    if (row.email) {
+      const custHtml = `<h2>Thanks ${esc(row.name)}!</h2>
+        <p>We've received your booking request for a <b>${esc(row.service_label || "valet")}</b> on <b>${esc(row.booking_date)}</b> at <b>${esc(row.booking_time)}</b>.</p>
+        <p>We'll give you a call on ${esc(row.phone)} to confirm the details.</p>
+        <p>— BB Car Detailing · Cleaner. Shinier. Better.</p>`;
+      await sendEmail(row.email, "We've got your booking — BB Car Detailing", custHtml);
+    }
+    return json({ ok: true });
   }
 
   if (payload?.password !== ADMIN_PASSWORD) return json({ error: "Unauthorized" }, 401);
@@ -281,22 +469,42 @@ Deno.serve(async (req: Request) => {
     const r = await db("bookings", "DELETE", `?id=eq.${payload.id}`, undefined, "return=minimal");
     return r.ok ? json({ ok: true }) : json({ error: "Could not delete" }, 500);
   }
-  if (action === "list_ranges") {
-    const r = await db("availability", "GET", `?avail_date=gte.${today()}&order=avail_date.asc,start_time.asc,person.asc`);
-    return r.ok ? json({ ranges: r.data }) : json({ error: "Could not load ranges" }, 500);
+
+  // ----- Time off (holidays / days unavailable) -----
+  if (action === "list_time_off") {
+    const r = await db("time_off", "GET", `?end_date=gte.${today()}&order=start_date.asc,person.asc`);
+    return r.ok ? json({ time_off: r.data }) : json({ error: "Could not load time off" }, 500);
   }
-  if (action === "add_range") {
-    const s = payload.range || {};
-    if (!s.person || !s.avail_date || !s.start_time || !s.end_time) return json({ error: "Missing range fields" }, 400);
-    if (toMin(s.end_time) <= toMin(s.start_time)) return json({ error: "End time must be after start time" }, 400);
-    const r = await db("availability", "POST", "",
-      { person: s.person, avail_date: s.avail_date, start_time: s.start_time, end_time: s.end_time }, "return=minimal");
-    if (r.ok || r.status === 409) return json({ ok: true });
-    return json({ error: "Could not add range" }, 500);
+  if (action === "add_time_off") {
+    const s = payload.time_off || {};
+    if (!s.person || !s.start_date) return json({ error: "Missing time off fields" }, 400);
+    const end = s.end_date || s.start_date;
+    if (end < s.start_date) return json({ error: "End date must be on or after start date" }, 400);
+    const people = s.person === "Both" ? PERSONS : [s.person];
+    const rows = people.map(p => ({ person: p, start_date: s.start_date, end_date: end }));
+    const r = await db("time_off", "POST", "", rows, "return=minimal");
+    return r.ok ? json({ ok: true }) : json({ error: "Could not add time off" }, 500);
   }
-  if (action === "delete_range") {
-    const r = await db("availability", "DELETE", `?id=eq.${payload.id}`, undefined, "return=minimal");
-    return r.ok ? json({ ok: true }) : json({ error: "Could not delete range" }, 500);
+  if (action === "delete_time_off") {
+    const r = await db("time_off", "DELETE", `?id=eq.${payload.id}`, undefined, "return=minimal");
+    return r.ok ? json({ ok: true }) : json({ error: "Could not delete time off" }, 500);
+  }
+
+  // ----- Discounts / sales (owner) -----
+  if (action === "set_discount") {
+    const d = payload.discount || {};
+    const pct = Number(d.percent);
+    if (!d.service_id || !Number.isInteger(pct) || pct < 1 || pct > 95) {
+      return json({ error: "Invalid discount" }, 400);
+    }
+    const row = { service_id: d.service_id, percent: pct, updated_at: new Date().toISOString() };
+    const r = await db("discounts", "POST", "", row, "resolution=merge-duplicates,return=minimal");
+    return r.ok ? json({ ok: true }) : json({ error: "Could not save discount" }, 500);
+  }
+  if (action === "remove_discount") {
+    if (!payload.service_id) return json({ error: "Missing service_id" }, 400);
+    const r = await db("discounts", "DELETE", `?service_id=eq.${encodeURIComponent(payload.service_id)}`, undefined, "return=minimal");
+    return r.ok ? json({ ok: true }) : json({ error: "Could not remove discount" }, 500);
   }
 
   return json({ error: "Unknown action" }, 400);
@@ -308,12 +516,32 @@ Deno.serve(async (req: Request) => {
 ## 8. What the owner can edit in `index.html`
 
 Everything editable is near the top — search the file for **`EDIT`**:
-- `businessName`, `tagline`
+- `businessName` (**"BB Car Detailing"**), `tagline`
+  (**"Cleaner. Shinier. Better. …"**).
 - `services[]` — `{id, label, price, blurb}`. Currently:
   Exterior Wash £25, Interior Only £25, Full Valet £40.
 - `contacts[]` — currently **Bobby 07903 512940**, **Bramley 07434 651512**
   (each becomes a tappable "Call <name>" link in the footer).
-- `facebookUrl` — currently the placeholder `https://www.facebook.com/`.
+- `whatsapp` — number in **international** format (no spaces/`+`; UK = drop the
+  leading 0, prepend 44). Currently `"447903512940"` (Bobby). Drives the green
+  **"WhatsApp us"** button in the hero + footer (pre-filled message). `""` hides it.
+- `reviews[]` — `{name, stars, text}` customer reviews shown in the **"What our
+  customers say"** section (star ratings). Seeded with 3 **placeholder** reviews —
+  replace with real ones. Empty array hides the section.
+- `facebookUrl` — set to the real page
+  (`https://www.facebook.com/share/184bo5SHpP/?mibextid=wwXIfr`).
+- **Social link preview**: `<head>` has Open Graph / Twitter meta + favicon
+  (logo as the share image) so shared links show a card. Update if branding changes.
+- `logoUrl` — `"logo.jpg"`. When set, the logo is **featured large in the hero
+  only** (the H1 text is kept but visually hidden for SEO/screen readers). The
+  sticky header and owner bar deliberately use **text branding** ("BB Car
+  Detailing"), because the wide wordmark logo looked cramped/clipped shrunk into
+  a small bar. Set to `""` to show the hero H1 text instead of the image.
+- `gallery` — array of before/after pairs, e.g.
+  `[{ before: "before1.jpg", after: "after1.jpg" }, …]`. Rendered as a
+  **swipeable carousel** in the hero (dots appear when there's >1 pair). Empty
+  array → friendly placeholders. Each filename must be an image uploaded/committed
+  to the repo root.
 - `apiUrl` — the Edge Function URL (do not change).
 - Colour theme — the `:root` CSS variables.
 
@@ -321,29 +549,68 @@ Everything editable is near the top — search the file for **`EDIT`**:
 
 ## 9. Status
 
-**Done:**
-- Landing page (name, logo placeholder, tagline, before/after photo placeholders)
-- Services & pricing
-- Booking form → confirmation, saved to shared Supabase backend
-- Password-protected owner page: bookings list (sorted by date, complete/delete)
-- Two named contact numbers in footer
-- Availability system: free-time ranges → 30-min start times, 2½-hour overlap
-  blocking, per-person + "together"
+**Done (all merged to `main` and live; PRs #1–#13):**
+- Landing page; **BB Car Detailing** branding + "Cleaner. Shinier. Better."
+- **Logo** (`logo.jpg`) featured large in the hero; header + owner bar use clean
+  **text branding** (the wide wordmark looked clipped in a small bar).
+- **Facebook link** set to the real page.
+- **Swipeable before/after carousel** built (config-driven via `CONFIG.gallery`;
+  currently empty → placeholders until photos are added).
+- Services & pricing; booking form → confirmation, saved to Supabase.
+- **Booking flow:** customer picks a **date on a calendar** (native
+  `<input type=date>`, constrained to the bookable window) then a **time** from a
+  dropdown for that day. Date & Time fields are **stacked full-width** (a
+  side-by-side row looked cramped on mobile). Native date input is CSS-normalised
+  for iOS (see Gotchas).
+- Password-protected owner page: bookings list (complete/delete).
+- Two named contact numbers in footer.
+- Availability system (**inverted model**): default hours every day
+  (weekdays 16:30–19:00, weekends 10:00–18:00); owners book **time off** per
+  person (single day or multi-day range, or "Both"); 30-min starts, 2½-hour
+  overlap blocking, per-person + "together". Booking horizon **6 weeks**
+  (`HORIZON_DAYS=42`), rolling.
+- Owner page **colour-coded time-off calendar**: scrollable, shows current month
+  + 6 months ahead (rolls forward automatically). Day colours: **blue=Bobby off,
+  red=Bramley off, purple=both off**, normal=both free. Built from the same
+  `time_off` data; chronological list with Remove buttons sits below it.
+- **Marketing:** booking **QR code** saved as `bb-qr.png` (links to `…/#book`);
+  a poster/leaflet prompt for "Claude design" saved in `POSTER-PROMPT.md`.
+- **Discounts / sales (2026-06-18, PR #11):** owner page card to put a service on
+  sale by a % (1–95); main page shows old price struck through + new price + a
+  "% off" badge; booking dropdown + saved price use the sale price. Backed by the
+  `discounts` table and `discounts`/`set_discount`/`remove_discount` actions.
+- **"Please read" terms popup (PR #12):** modal on page open (water supply, room
+  to detail, parking) with an "I accept these terms" button; **required** "I agree
+  to our terms" checkbox by the booking button, with a "terms" link that reopens it.
+- **WhatsApp button (PR #13):** green "WhatsApp us" in hero + footer
+  (`CONFIG.whatsapp`, pre-filled message).
+- **Social link preview (PR #13):** Open Graph / Twitter card meta + favicon (logo
+  as share image) so shared links show a proper card + home-screen icon.
+- **Reviews (PR #13):** "What our customers say" section with star ratings
+  (`CONFIG.reviews`) — currently **placeholder** reviews to be replaced with real ones.
+- **Booking email alerts (Resend, function v8):** every booking emails the owner
+  (`OWNER_EMAILS`) + the customer. **Live and tested** (owner alert confirmed
+  landing). See Section 4 for the domain caveat (customer emails to other people
+  need a verified domain).
 
 **TODO (waiting on the user to provide assets):**
-1. **Facebook link** — set `CONFIG.facebookUrl` to the real page URL.
-2. **Logo** — replace the `<div class="logo">BB</div>` (appears twice: header
-   + admin header) with `<img src="logo.png" …>`; the image file must also be
-   uploaded to the Booking-system repo and referenced relatively.
-3. **Before/after photos** — replace the two `<div class="photo">…</div>`
-   placeholders in the hero `.gallery` with `<img>` tags; upload the image
-   files to the repo too.
+1. **Before/after photos** — the user will send images (attached in chat → copy
+   them from the session upload folder into the repo root). Add a
+   `{ before, after }` line per pair to `CONFIG.gallery`; they appear in the hero
+   carousel automatically. Merge to `main` to go live.
+2. (Optional) the user is making a **poster** in Claude design using
+   `POSTER-PROMPT.md`, their logo, the QR, and a photo of Bobby & Bramley — may
+   ask for tweaks to the prompt or a Facebook caption.
+3. **Real reviews** — replace the 3 placeholder `CONFIG.reviews` with genuine
+   customer quotes when available.
+4. **(Optional) Verify a Resend domain** (~£10/yr) so **customer** confirmation
+   emails + Bramley's alerts send (see Section 4). Owner alerts already work.
 
 **Good to know:**
 - When a booking is **deleted** in the owner page, its time **reopens
-  automatically**. Availability is computed live from the *current* bookings on
-  every `slots` request, so a removed booking no longer blocks anything. (This
-  was a limitation of the earlier fixed-slot design; the range design fixed it.)
+  automatically** (availability is computed live on every `slots` request).
+- The customer booking window (6 weeks) and the owner time-off calendar (6
+  months) are **separate** ranges — don't confuse them.
 
 ---
 
@@ -360,14 +627,41 @@ Everything editable is near the top — search the file for **`EDIT`**:
 - The network sandbox in these sessions blocks outbound calls to Supabase, so
   the function can't be `curl`-tested from the tool environment — test the DB
   layer with `execute_sql` and trust the function, or test live in the browser.
+  Email sending likewise can only be verified by a **live test booking**.
+- **Secrets stay out of the repo:** the real `RESEND_API_KEY` (and the admin
+  password) live **only in the deployed Edge Function**, never in `index.html` or
+  this doc. Section 7's listing shows a `re_…` placeholder — if redeploying, pull
+  the live key from the function source (Supabase MCP `get_edge_function`) or ask
+  Bobby. Never commit the real key.
+- **User preference (Bobby, 2026-06-18):** "every time I tell you to do something
+  new, always make it live." So once scoped to the repo: build → commit/push →
+  open + squash-merge the PR to `main` → resync the branch, without waiting to be
+  told "go live". (Backend/Supabase changes are already live on deploy.)
+- **Native date input quirk:** iOS Safari renders `<input type=date>` wider,
+  taller and centre-aligned. There's CSS normalising it
+  (`-webkit-appearance:none`, left-aligned `::-webkit-date-and-time-value`) so it
+  matches the other fields — keep it if you touch that area.
+- **QR code:** `bb-qr.png` (repo root) links to
+  `https://bobbyparnell0109.github.io/Booking-system/#book`. It's **black
+  modules on a silver tile** (dark-on-light). Do NOT make it light-on-dark
+  ("inverted") — those fail many scanners (verified failing to decode with
+  OpenCV). Regenerate with the Python `qrcode` lib (`pip install qrcode pillow`)
+  if the URL ever changes.
+- Quick JS sanity check after editing `index.html`: extract the `<script>`
+  blocks and `new vm.Script(s)` each in Node to catch syntax errors (there's no
+  build step or test suite).
 
 ---
 
 ## 11. How to resume in a new session
 
 1. Start the session on the **`Booking-system`** repo (add it to the session if
-   prompted) so Claude can push `index.html` directly.
-2. First message: *"Read HANDOFF.md and continue the BB Details project."*
-3. Provide whatever's ready (Facebook URL / logo image / before+after photos)
-   and Claude will wire it in, then either push (if scoped to the repo) or hand
-   back the updated `index.html` to upload.
+   prompted) so Claude can push directly and open/merge PRs.
+2. First message: *"Read HANDOFF.md and continue the BB Car Detailing project."*
+3. If scoped to the repo: develop on a feature branch, commit, push, then (when
+   the user says "go live") open + squash-merge a PR into `main`, and resync the
+   branch (see Section 3). If NOT scoped: edit `index.html` locally and send it
+   to the user to upload via Safari.
+4. The most likely next task is **before/after photos** (drop them into
+   `CONFIG.gallery`) — see Section 9 TODO. The site is otherwise complete and
+   live.
